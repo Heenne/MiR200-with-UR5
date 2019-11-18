@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<robot name="MiR200_UR5" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!--Include all needed urdf files-->
+    <!--Include urdf of the MiR base-->
+    <xacro:include filename="$(find mir_description)/urdf/mir.urdf.xacro"/>
+
+    <!--Include urdf of the UR5 robot arm-->
+
+    <xacro:mir_200/> <!--Make namespace and name variable in future-->
+</robot>
