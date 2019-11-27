@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="robot_name"/>
+    <arg name="init_pose" default="-x 0 -y 0 -z 0 -Y 0"/>
+
+    <!--Spawn the MiR plattform into Gazebo-->
+    <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" 
+          args="-urdf -param /robot_description -model $(arg robot_name) $(arg init_pose)" 
+          respawn="false" output="screen"/>
+
+    <node pkg="robot_state_publisher" type="state_publisher" 
+          name="robot_state_publisher" output="screen"/>
+
+</launch>
