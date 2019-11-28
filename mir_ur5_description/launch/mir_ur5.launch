@@ -1,14 +1,30 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="robot_name"/>
-    <arg name="init_pose" default="-x 0 -y 0 -z 0 -Y 0"/>
+      <arg name="robot_name"/>
+      <arg name="prefix" default="$(arg robot_name)"/>
+      <arg name="init_pose" default="-x 0 -y 0 -Y 0"/>
+      <arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface" />
 
-    <!--Spawn the MiR plattform into Gazebo-->
-    <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" 
+      <!--Spawn the MiR plattform into Gazebo-->
+      <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" 
           args="-urdf -param /robot_description -model $(arg robot_name) $(arg init_pose)" 
           respawn="false" output="screen"/>
 
-    <node pkg="robot_state_publisher" type="state_publisher" 
-          name="robot_state_publisher" output="screen"/>
+      <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
 
+      <!-- Load ros_control controller configurations -->
+      <rosparam file="$(find mir_description)/config/joint_state_controller.yaml" command="load" />  
+      <rosparam file="$(find mir_description)/config/diffdrive_controller.yaml" command="load" subst_value="true"/>
+
+      <!--remap from="joint_states" to="$(arg robot_name)/joint_states" /-->
+
+      <!-- Start the controllers -->
+      <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen"
+            args="joint_state_controller mobile_base_controller"/>
+
+      <!-- Add passive + mimic joints to joint_states topic -->
+      <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+            <rosparam param="source_list">[mir/joint_states]</rosparam>
+            <param name="rate" value="200.0" />
+      </node>
 </launch>

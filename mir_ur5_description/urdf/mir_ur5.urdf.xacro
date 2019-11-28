@@ -1,24 +1,33 @@
 <?xml version="1.0"?>
 <robot name="MiR200_UR5" xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <arg name="robot_namespace" default=''/>
-    <arg name="test" default='0.002'/>
-    <xacro:property name="robot_namespace" value='$(arg robot_namespace)'/>
-    <xacro:property name="test" value='$(arg test)'/>
+    <arg name="robot_name" default=''/>
+    <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
+
+    <xacro:property name="robot_name" value='$(arg robot_name)'/>
 
     <!--Include all needed urdf files-->
     <!--Include urdf of the MiR base-->
     <xacro:include filename="$(find mir_description)/urdf/include/mir_200_v1.urdf.xacro"/>
+    <xacro:mir_200 prefix="$(arg robot_name)"/>
 
-    <xacro:mir_200 prefix=""/>
     <!--Include urdf of the UR5 robot arm-->
+    <!--xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro"/-->
+    <!--xacro:ur5_robot prefix="" joint_limited="true"
+    shoulder_pan_lower_limit="${-pi}" shoulder_pan_upper_limit="${pi}"
+    shoulder_lift_lower_limit="${-pi}" shoulder_lift_upper_limit="${pi}"
+    elbow_joint_lower_limit="${-pi}" elbow_joint_upper_limit="${pi}"
+    wrist_1_lower_limit="${-pi}" wrist_1_upper_limit="${pi}"
+    wrist_2_lower_limit="${-pi}" wrist_2_upper_limit="${pi}"
+    wrist_3_lower_limit="${-pi}" wrist_3_upper_limit="${pi}"
+    transmission_hw_interface="$(arg transmission_hw_interface)"/-->
 
     <!--Link to Gazebo library-->
     <gazebo>
         <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-            <xacro:unless value="${robot_namespace == ''}">
-                <robotNamespace>$(arg robot_namespace)</robotNamespace>
+            <xacro:unless value="${robot_name == ''}">
+                <robotNamespace>$(arg robot_name)</robotNamespace>
             </xacro:unless>
-            <controlPeriod>$(arg test)</controlPeriod>
+            <controlPeriod>0.001</controlPeriod>
             <legacyModeNS>true</legacyModeNS>
         </plugin>
     </gazebo>
