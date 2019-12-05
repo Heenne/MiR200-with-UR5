@@ -12,12 +12,12 @@
     </group>
 
     <!--Spawn in Robot 2-->
-    <group ns="$(arg robot2_name)">
+    <!--group ns="$(arg robot2_name)">
         <param name="tf_prefix" value="robot2_tf"/>
         <include file="$(find mir_ur5_description)/launch/mir_ur5.launch">
             <arg name="robot_name" value="$(arg robot2_name)"/>
             <arg name="init_pose" value="-x 1 -y 1 -Y 0"/>
         </include>                
-    </group>    
+    </group-->    
     
 </launch>

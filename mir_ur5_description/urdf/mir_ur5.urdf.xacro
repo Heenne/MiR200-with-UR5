@@ -11,15 +11,22 @@
     <xacro:mir_200 prefix="$(arg robot_name)"/>
 
     <!--Include urdf of the UR5 robot arm-->
-    <!--xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro"/-->
-    <!--xacro:ur5_robot prefix="" joint_limited="true"
+    <xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro"/>
+    <xacro:ur5_robot prefix="" joint_limited="true"
     shoulder_pan_lower_limit="${-pi}" shoulder_pan_upper_limit="${pi}"
     shoulder_lift_lower_limit="${-pi}" shoulder_lift_upper_limit="${pi}"
     elbow_joint_lower_limit="${-pi}" elbow_joint_upper_limit="${pi}"
     wrist_1_lower_limit="${-pi}" wrist_1_upper_limit="${pi}"
     wrist_2_lower_limit="${-pi}" wrist_2_upper_limit="${pi}"
     wrist_3_lower_limit="${-pi}" wrist_3_upper_limit="${pi}"
-    transmission_hw_interface="$(arg transmission_hw_interface)"/-->
+    transmission_hw_interface="$(arg transmission_hw_interface)"/>
+
+    <!--This joint needs to be in the mir_200_v1.urdf.xacro! Otherwise the robot cant be placed exactly on the base platform-->
+    <joint name="robot_to_ur5" type="fixed">
+        <parent link="base_link"/>
+        <child link="robot1base_footprint"/>
+        <origin xyz="0 0 -0.36"/>
+    </joint>
 
     <!--Link to Gazebo library-->
     <gazebo>
