@@ -5,10 +5,6 @@
 
     <!--Spawn in Robot 1-->
     <group ns="$(arg robot1_name)">
-        <!--remap from="joint_states"                   to="/robot1/joint_states" />
-        <remap from="mobile_base_controller/cmd_vel" to="cmd_vel" />
-        <remap from="mobile_base_controller/odom"    to="odom_comb" /-->
-
         <param name="tf_prefix" value="$(arg robot1_name)_tf"/>
         <include file="$(find mir_ur5_description)/launch/mir_ur5.launch">
             <arg name="robot_name" value="$(arg robot1_name)"/>
@@ -16,12 +12,12 @@
     </group>
 
     <!--Spawn in Robot 2-->
-    <!--group ns="$(arg robot2_name)">
+    <group ns="$(arg robot2_name)">
         <param name="tf_prefix" value="robot2_tf"/>
         <include file="$(find mir_ur5_description)/launch/mir_ur5.launch">
             <arg name="robot_name" value="$(arg robot2_name)"/>
             <arg name="init_pose" value="-x 1 -y 1 -Y 0"/>
         </include>                
-    </group-->    
+    </group>    
     
 </launch>
