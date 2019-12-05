@@ -5,9 +5,12 @@
       <arg name="init_pose" default="-x 0 -y 0 -Y 0"/>
       <arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface" />
 
+      <param name="robot_description" 
+            command="$(find xacro)/xacro --inorder $(find mir_ur5_description)/urdf/mir_ur5.urdf.xacro robot_name:=$(arg robot_name)"/>
+
       <!--Spawn the MiR plattform into Gazebo-->
       <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" 
-          args="-urdf -param /robot_description -model $(arg robot_name) $(arg init_pose)" 
+          args="-urdf -param robot_description -model $(arg robot_name) $(arg init_pose)" 
           respawn="false" output="screen"/>
 
       <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
@@ -24,7 +27,7 @@
 
       <!-- Add passive + mimic joints to joint_states topic -->
       <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-            <rosparam param="source_list">[mir/joint_states]</rosparam>
+            <rosparam param="source_list" subst_value="true">[$(arg robot_name)/joint_states]</rosparam>
             <param name="rate" value="200.0" />
       </node>
 </launch>
