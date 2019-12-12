@@ -18,4 +18,12 @@
 
     <!--Launch robot(s) into the world-->
     <include file="$(find mir_ur5_description)/launch/spawn_robots.launch"/>
+
+
+    <!--Could be fix for tf to map problem-->
+    <arg name="map_file" default="$(find mir_gazebo)/maps/pp_test_5.yaml" doc="Path to a map .yaml file (required)." />
+  
+    <node name="static_map_server" pkg="map_server" type="map_server" args="$(arg map_file)" ns="/" output="screen">
+        <param name="frame_id" type="string" value="/map"/>
+    </node>
 </launch>
