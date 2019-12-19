@@ -28,4 +28,7 @@
             <rosparam param="source_list" subst_value="true">[$(arg robot_name)/joint_states]</rosparam>
             <param name="rate" value="200.0" />
       </node>
+
+      <!--This node is responsible for the publishing of the odom_comb-->
+      <include file="$(find mir_ur5_description)/launch/ekf.launch.xml"/>
 </launch>
