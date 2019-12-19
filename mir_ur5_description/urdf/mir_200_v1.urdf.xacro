@@ -169,8 +169,8 @@
     </gazebo>
 
     <!--Include the UR5 into the model. The position of the model was measured usind laser scanner. See Florians master thesis-->
-    <xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro"/>
-    <xacro:ur5_robot prefix="test" joint_limited="true"
+    <xacro:include filename="$(find mir_ur5_description)/urdf/ur5.urdf.xacro"/>
+    <xacro:ur5_robot prefix="${prefix}" joint_limited="true"
     shoulder_pan_lower_limit="${-pi}" shoulder_pan_upper_limit="${pi}"
     shoulder_lift_lower_limit="${-pi}" shoulder_lift_upper_limit="${pi}"
     elbow_joint_lower_limit="${-pi}" elbow_joint_upper_limit="${pi}"
@@ -181,8 +181,8 @@
 
     <!--This joint needs to be in the mir_200_v1.urdf.xacro! Otherwise the robot cant be placed exactly on the base platform-->
     <joint name="robot_to_ur5" type="fixed">
-      <parent link="${prefix}base_footprint"/>
-      <child link="testbase_link"/>
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}base_link_ur5"/>
       <origin xyz="0.244311 -0.140242 0.450477"/>
     </joint>
 
