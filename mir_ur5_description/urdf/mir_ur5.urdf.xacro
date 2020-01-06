@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <robot name="MiR200_UR5" xmlns:xacro="http://ros.org/wiki/xacro">
-    <arg name="robot_name" default=''/>
-    <arg name="robot_namespace" default=''/>
+    <xacro:arg name="robot_name" default=''/>
+    <xacro:arg name="robot_namespace" default=''/>
+    <xacro:arg name="tf_prefix" default=''/>
     <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
 
     <xacro:property name="robot_name" value='$(arg robot_name)'/>
@@ -10,7 +11,7 @@
     <!--Include all needed urdf files-->
     <!--Include urdf of the MiR base-->
     <xacro:include filename="$(find mir_ur5_description)/urdf/mir_200_v1.urdf.xacro"/>
-    <xacro:mir_200 prefix="$(arg robot_name)"/>
+    <xacro:mir_200 prefix=""/>
 
     <!--Include urdf of the UR5 robot arm-->
     <!--xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro"/>

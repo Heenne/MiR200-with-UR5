@@ -5,16 +5,19 @@
     <arg name="robot1_namespace" value="$(arg robot1_name)_ns"/>
     <arg name="robot1_tf" value="$(arg robot1_name)_tf"/> 
 
-    <arg name="robot2_name" value="robot2"/>
+    <arg name="robot2_name" value="robot2"/>    
 
     <!--Spawn in Robot 1-->
-    <group ns="$(arg robot1_namespace)">
-        <param name="tf_prefix" value="$(arg robot1_tf)"/>
+    <!-- <group ns="$(arg robot1_namespace)">
+        <param name="tf_prefix" value="$(arg robot1_tf)"/> -->
         <include file="$(find mir_ur5_description)/launch/mir_ur5.launch">
             <arg name="robot_name" value="$(arg robot1_name)"/>
-            <arg name="robot_namespace" value="$(arg robot1_namespace)"/>
+            <!-- <arg name="robot_namespace" value="$(arg robot1_namespace)"/>
+            <arg name="robot_tf" value="$(arg robot1_tf)"/> -->
+            <arg name="robot_namespace" value=""/>
+            <arg name="robot_tf" value=""/>
         </include>
-    </group>
+    <!-- </group> -->
     
     <!--Spawn in Robot 2-->
     <!--group ns="$(arg robot2_name)">
