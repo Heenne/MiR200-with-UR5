@@ -1,13 +1,14 @@
 <?xml version="1.0"?>
-<robot name="MiR200_UR5" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot name="MiR200_UR5" xmlns:xacro="http://ros.org/wiki/xacro">
     <arg name="robot_name" default=''/>
+    <arg name="robot_namespace" default=''/>
     <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
 
     <xacro:property name="robot_name" value='$(arg robot_name)'/>
+    <xacro:property name="robot_namespace" value="$(arg robot_namespace)"/>
 
     <!--Include all needed urdf files-->
     <!--Include urdf of the MiR base-->
-    <!--xacro:include filename="$(find mir_description)/urdf/include/mir_200_v1.urdf.xacro"/-->
     <xacro:include filename="$(find mir_ur5_description)/urdf/mir_200_v1.urdf.xacro"/>
     <xacro:mir_200 prefix="$(arg robot_name)"/>
 
@@ -32,8 +33,8 @@
     <!--Link to Gazebo library-->
     <gazebo>
         <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-            <xacro:unless value="${robot_name == ''}">
-                <robotNamespace>$(arg robot_name)</robotNamespace>
+            <xacro:unless value="${robot_namespace == ''}">
+                <robotNamespace>$(arg robot_namespace)</robotNamespace>
             </xacro:unless>
             <controlPeriod>0.001</controlPeriod>
             <legacyModeNS>true</legacyModeNS>
