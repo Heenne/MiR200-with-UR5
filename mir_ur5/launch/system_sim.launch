@@ -3,9 +3,15 @@
     <param name="/use_sim_time" value="true" /> <!--Should be set to true in gazebo_ros package empty_world.launch-->
 
     <arg name="world_name" default="$(find mir_gazebo)/maps/world/pp_test_5.world" doc="Specifies the map the robot will be spawned in"/>
+    <arg name="map_file" default="$(find mir_gazebo)/maps/pp_test_5.yaml"/>
     <arg name="paused" default="false" doc="Starts gazebo in paused mode" />
     <arg name="gui" default="true" doc="Starts gazebo gui" />
 
+    <node name="unpause_physics" pkg="rosservice" type="rosservice" args="call --wait /gazebo/unpause_physics">
+    </node>
+
+    <remap from="mobile_base_controller/cmd_vel" to="cmd_vel" />
+    <remap from="mobile_base_controller/odom"    to="odom_comb" />
     <!-- Startup Gazebo with simulated world -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" default="$(arg world_name)"/>
@@ -13,11 +19,15 @@
         <arg name="gui" value="$(arg gui)"/>
     </include>
 
+    <include file="$(find mir_ur5_description)/launch/mir_launch/start_maps.launch">
+        <arg name="map_file" value="$(arg map_file)"/>
+    </include>
+
     <!--Launch rviz-->
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find mir_navigation)/rviz/navigation.rviz"/>
 
     <!-- start plotjuggler -->
-    <node pkg="plotjuggler" type="PlotJuggler" name="my_plot_Juggler" args="" />
+    <!-- <node pkg="plotjuggler" type="PlotJuggler" name="my_plot_Juggler" args="" /> -->
 
     <!--Launch robot(s) into the world-->
     <include file="$(find mir_ur5_description)/launch/spawn_robots.launch"/>

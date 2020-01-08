@@ -1,42 +1,27 @@
 <?xml version="1.0"?>
-<robot name="MiR200_UR5" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+        xmlns:xacro="http://ros.org/wiki/xacro"
+        xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+        name="MiR200_UR5">
+
     <xacro:arg name="robot_name" default=''/>
-    <xacro:arg name="robot_namespace" default=''/>
     <xacro:arg name="tf_prefix" default=''/>
     <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
 
-    <xacro:property name="robot_name" value='$(arg robot_name)'/>
-    <xacro:property name="robot_namespace" value="$(arg robot_namespace)"/>
+    <!-- <xacro:property name="robot_name" value='$(arg robot_name)'/> -->
 
     <!--Include all needed urdf files-->
     <!--Include urdf of the MiR base-->
     <xacro:include filename="$(find mir_ur5_description)/urdf/mir_200_v1.urdf.xacro"/>
     <xacro:mir_200 prefix=""/>
 
-    <!--Include urdf of the UR5 robot arm-->
-    <!--xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro"/>
-    <xacro:ur5_robot prefix="" joint_limited="true"
-    shoulder_pan_lower_limit="${-pi}" shoulder_pan_upper_limit="${pi}"
-    shoulder_lift_lower_limit="${-pi}" shoulder_lift_upper_limit="${pi}"
-    elbow_joint_lower_limit="${-pi}" elbow_joint_upper_limit="${pi}"
-    wrist_1_lower_limit="${-pi}" wrist_1_upper_limit="${pi}"
-    wrist_2_lower_limit="${-pi}" wrist_2_upper_limit="${pi}"
-    wrist_3_lower_limit="${-pi}" wrist_3_upper_limit="${pi}"
-    transmission_hw_interface="$(arg transmission_hw_interface)"/-->
-
-    <!--This joint needs to be in the mir_200_v1.urdf.xacro! Otherwise the robot cant be placed exactly on the base platform-->
-    <!--joint name="robot_to_ur5" type="fixed">
-        <parent link="base_link"/>
-        <child link="robot1base_footprint"/>
-        <origin xyz="0 0 -0.36"/>
-    </joint-->
-
     <!--Link to Gazebo library-->
     <gazebo>
         <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-            <xacro:unless value="${robot_namespace == ''}">
+            <!-- <xacro:unless value="${robot_namespace == ''}">
                 <robotNamespace>$(arg robot_namespace)</robotNamespace>
-            </xacro:unless>
+            </xacro:unless> -->
             <controlPeriod>0.001</controlPeriod>
             <legacyModeNS>true</legacyModeNS>
         </plugin>

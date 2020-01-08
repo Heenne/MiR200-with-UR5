@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<launch>
+      <arg name="robot_name"/>
+      <!-- <arg name="robot_namespace"/>
+      <arg name="robot_tf"/> -->
+      <arg name="prefix" default=""/> <!--diff drive needs this to be set-->
+      <arg name="init_pose" default="-x 0.0 -y 0.0 -Y 0.0 -z 0.0"/>
+
+      <arg name="local_planner" default="dwa" doc="Local planner can be either dwa, eband, base, teb or pose" />
+      
+      <!-- <arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface" /> -->
+
+      <!-- <param name="robot_description" 
+            command="$(find xacro)/xacro inorder $(find mir_ur5_description)/urdf/mir_ur5.urdf.xacro 
+                        robot_name:=$(arg robot_name)
+                        robot_namespace:=$(arg robot_namespace)
+                        tf_prefix:=$(arg robot_tf)"/> Add two dashes before inorder -->
+      <param name="robot_description" 
+            command="$(find xacro)/xacro --inorder $(find mir_description)/urdf/mir.urdf.xacro"/>
+      
+      <!--Spawn the MiR plattform into Gazebo-->
+      <!-- <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
+          args="-urdf -param robot_description -model $(arg robot_name) $(arg init_pose)" 
+          respawn="false" output="screen"/> -->
+      <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
+          args="-urdf -param robot_description -model $(arg robot_name) $(arg init_pose)" 
+          respawn="false" output="screen"/>          
+      
+      <!-- Load ros_control controller configurations -->
+      <rosparam file="$(find mir_description)/config/joint_state_controller.yaml" command="load" />  
+      <rosparam file="$(find mir_description)/config/diffdrive_controller.yaml" command="load" subst_value="true"/>
+
+      <!-- Start the controllers -->
+      <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen"
+            args="joint_state_controller mobile_base_controller"/>
+
+      <include file="$(find mir_gazebo)/launch/includes/ekf.launch.xml"/>
+
+      <!--spawn_gazebo_model-->
+      <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
+
+      <node pkg="topic_tools" type="relay" name="b_scan_relay" args="b_scan scan"/>
+      <node pkg="topic_tools" type="relay" name="f_scan_relay" args="f_scan scan"/>
+
+      <!-- Add passive + mimic joints to joint_states topic -->
+      <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+            <rosparam param="source_list" subst_value="true">[joint_states]</rosparam>
+            <param name="rate" value="200.0" />
+      </node>
+
+      <include file="$(find mir_navigation)/launch/mir_nav/amcl.launch"></include>
+      
+      <include file="$(find mir_navigation)/launch/mir_nav/move_base.xml">
+            <arg name="local_planner" value="$(arg local_planner)"/>
+      </include>
+</launch>
