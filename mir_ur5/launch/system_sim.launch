@@ -19,16 +19,16 @@
         <arg name="gui" value="$(arg gui)"/>
     </include>
 
-    <include file="$(find mir_ur5_description)/launch/mir_launch/start_maps.launch">
+    <include file="$(find mir_ur5_navigation)/launch/start_maps.launch">
         <arg name="map_file" value="$(arg map_file)"/>
     </include>
 
     <!--Launch rviz-->
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find mir_navigation)/rviz/navigation.rviz"/>
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find mir_ur5_navigation)/rviz/navigation.rviz"/>
 
     <!-- start plotjuggler -->
     <!-- <node pkg="plotjuggler" type="PlotJuggler" name="my_plot_Juggler" args="" /> -->
 
     <!--Launch robot(s) into the world-->
-    <include file="$(find mir_ur5_description)/launch/spawn_robots.launch"/>
+    <include file="$(find mir_ur5)/launch/spawn_robots.launch"/>
 </launch>

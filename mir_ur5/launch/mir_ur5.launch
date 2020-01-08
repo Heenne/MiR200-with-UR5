@@ -36,7 +36,6 @@
 
       <include file="$(find mir_gazebo)/launch/includes/ekf.launch.xml"/>
 
-      <!--spawn_gazebo_model-->
       <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
 
       <node pkg="topic_tools" type="relay" name="b_scan_relay" args="b_scan scan"/>
