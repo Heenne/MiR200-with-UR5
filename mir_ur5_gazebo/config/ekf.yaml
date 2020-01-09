@@ -122,7 +122,7 @@ odom0_relative: false
 
 # Further input parameter examples
 # see http://docs.ros.org/melodic/api/robot_localization/html/configuring_robot_localization.html
-imu0: robot1/imu_data #No idea if robot1 is correct here!!!
+imu0: imu_data
 imu0_config: [false, false, false,   # x y z
               false, false, true,    # roll pitch yaw
               false, false, false,   # vx vy vz
