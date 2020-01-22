@@ -1,14 +1,12 @@
 <?xml version="1.0"?>
 <launch>
       <arg name="robot_name"/>
+      <arg name="tf_prefix"/>
       <!-- <arg name="robot_namespace"/>-->
       <arg name="prefix" default="robot1_tf/"/> <!--diff drive needs this to be set-->
       <arg name="init_pose" default="-x 0.0 -y 0.0 -Y 0.0 -z 0.0"/>
 
       <arg name="local_planner" default="dwa" doc="Local planner can be either dwa, eband, base, teb or pose" />
-      
-      <remap from="robot1_ns/mobile_base_controller/cmd_vel" to="robot1_ns/cmd_vel"/>
-      <remap from="robot1_ns/mobile_base_controller/odom"    to="robot1_ns/odom_comb"/>  
 
       <!--Remap the odom and cmd_vel from "mobile_base_controller/cmd_vel" to "cmd_vel"-->
       <!-- <remap from="mobile_base_controller/cmd_vel" to="cmd_vel"/>
@@ -41,6 +39,7 @@
       <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen"
             args="joint_state_controller mobile_base_controller"/>   
 
+      <!--Include Kalman-filter later again. For now only use odom-->
       <!-- <include file="$(find mir_ur5_gazebo)/launch/ekf.launch.xml"/> -->
 
       <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
@@ -64,7 +63,9 @@
             <param name="rate" value="200.0" />
       </node>
 
-      <include file="$(find mir_ur5_navigation)/launch/amcl.launch"></include>
+      <include file="$(find mir_ur5_navigation)/launch/amcl.launch">
+            <arg name="tf_prefix" value="$(arg tf_prefix)"/>
+      </include>
       
       <!-- <include file="$(find mir_ur5_navigation)/launch/move_base.xml">
             <arg name="local_planner" value="$(arg local_planner)"/>
