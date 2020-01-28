@@ -3,7 +3,7 @@
       <arg name="robot_name"/>
       <arg name="tf_prefix"/>
       <arg name="robot_namespace"/>
-      <arg name="prefix" default="robot1_tf/"/> <!--diff drive needs this to be set-->
+      <arg name="prefix" default="$(arg tf_prefix)/"/> <!--diff drive needs this to be set-->
       <arg name="init_pose" default="-x 0.0 -y 0.0 -Y 0.0 -z 0.0"/>
 
       <arg name="local_planner" default="dwa" doc="Local planner can be either dwa, eband, base, teb or pose" />
