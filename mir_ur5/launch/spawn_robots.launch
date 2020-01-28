@@ -11,6 +11,7 @@
         <param name="tf_prefix" value="$(arg robot1_tf)" />
         <include file="$(find mir_ur5)/launch/mir_ur5.launch">
             <arg name="robot_name" value="$(arg robot1_name)"/>
+            <arg name="robot_namespace" value="$(arg robot1_namespace)"/>
             <arg name="tf_prefix" value="$(arg robot1_tf)"/>
         </include>
     </group>

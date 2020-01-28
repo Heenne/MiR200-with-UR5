@@ -2,7 +2,7 @@
 <launch>
       <arg name="robot_name"/>
       <arg name="tf_prefix"/>
-      <!-- <arg name="robot_namespace"/>-->
+      <arg name="robot_namespace"/>
       <arg name="prefix" default="robot1_tf/"/> <!--diff drive needs this to be set-->
       <arg name="init_pose" default="-x 0.0 -y 0.0 -Y 0.0 -z 0.0"/>
 
@@ -30,7 +30,7 @@
       <!-- <rosparam file="$(find ur_gazebo)/controller/arm_controller_ur5.yaml" command="load"/> -->
 
       <!-- Start the controllers -->
-      <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen" ns="/robot1_ns"
+      <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen" ns="/$(arg robot_namespace)"
             args="joint_state_controller mobile_base_controller"/> <!--arm_controller -->
 
       <!--Include Kalman-filter later again. For now only use odom-->
