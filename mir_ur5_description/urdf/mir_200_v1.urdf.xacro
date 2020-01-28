@@ -3,12 +3,12 @@
   xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
   xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
   xmlns:xacro="http://ros.org/wiki/xacro">
-  
-  <xacro:include filename="$(find mir_description)/urdf/include/common_properties.urdf.xacro" />
-  <xacro:include filename="$(find mir_description)/urdf/include/imu.gazebo.urdf.xacro" />
-  <xacro:include filename="$(find mir_description)/urdf/include/mir_200.gazebo.xacro" />
-  <xacro:include filename="$(find mir_description)/urdf/include/mir_200.transmission.xacro" />
-  <xacro:include filename="$(find mir_description)/urdf/include/sick_s300.urdf.xacro" />
+
+  <xacro:include filename="$(find mir_ur5_description)/urdf/include/common_properties.urdf.xacro" />
+  <xacro:include filename="$(find mir_ur5_description)/urdf/include/imu.gazebo.urdf.xacro" />
+  <xacro:include filename="$(find mir_ur5_description)/urdf/include/mir_200.gazebo.xacro" />
+  <xacro:include filename="$(find mir_ur5_description)/urdf/include/mir_200.transmission.xacro" />
+  <xacro:include filename="$(find mir_ur5_description)/urdf/include/sick_s300.urdf.xacro" />
 
   <xacro:property name="deg_to_rad" value="0.017453293" />
 
@@ -167,24 +167,6 @@
     <gazebo reference="${prefix}base_link">
       <material>Gazebo/LightGrey</material>
     </gazebo>
-
-    <!--Include the UR5 into the model. The position of the model was measured usind laser scanner. See Florians master thesis-->
-    <!-- <xacro:include filename="$(find mir_ur5_description)/urdf/ur5.urdf.xacro"/>
-    <xacro:ur5_robot prefix="${prefix}" joint_limited="true"
-    shoulder_pan_lower_limit="${-pi}" shoulder_pan_upper_limit="${pi}"
-    shoulder_lift_lower_limit="${-pi}" shoulder_lift_upper_limit="${pi}"
-    elbow_joint_lower_limit="${-pi}" elbow_joint_upper_limit="${pi}"
-    wrist_1_lower_limit="${-pi}" wrist_1_upper_limit="${pi}"
-    wrist_2_lower_limit="${-pi}" wrist_2_upper_limit="${pi}"
-    wrist_3_lower_limit="${-pi}" wrist_3_upper_limit="${pi}"
-    transmission_hw_interface="$(arg transmission_hw_interface)"/> -->
-
-    <!--This joint needs to be in the mir_200_v1.urdf.xacro! Otherwise the robot cant be placed exactly on the base platform-->
-    <!-- <joint name="robot_to_ur5" type="fixed">
-      <parent link="${prefix}base_link"/>
-      <child link="${prefix}base_link_ur5"/>
-      <origin xyz="0.244311 -0.140242 0.450477"/>
-    </joint> -->
 
     <!-- IMU -->
     <joint name="${prefix}base_link_to_imu_joint" type="fixed">

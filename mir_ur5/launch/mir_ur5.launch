@@ -8,25 +8,18 @@
 
       <arg name="local_planner" default="dwa" doc="Local planner can be either dwa, eband, base, teb or pose" />
 
-      <!--Remap the odom and cmd_vel from "mobile_base_controller/cmd_vel" to "cmd_vel"-->
-      <!-- <remap from="mobile_base_controller/cmd_vel" to="cmd_vel"/>
-      <remap from="mobile_base_controller/odom"    to="odom_comb"/> -->
+      <arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface" />
 
-      <!-- <arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface" /> -->
-
-      <!-- <param name="robot_description" 
-            command="$(find xacro)/xacro inorder $(find mir_ur5_description)/urdf/mir_ur5.urdf.xacro 
-                        robot_name:=$(arg robot_name)
-                        robot_namespace:=$(arg robot_namespace)
-                        tf_prefix:=$(arg robot_tf)"/> Add two dashes before inorder -->
-      
       <param name="robot_description" 
-            command="$(find xacro)/xacro --inorder $(find mir_description)/urdf/mir.urdf.xacro"/>
+            command="$(find xacro)/xacro --inorder $(find mir_ur5_description)/urdf/mir_ur5.urdf.xacro transmission_hw_interface:=$(arg transmission_hw_interface)" />
+                        <!-- robot_name:=$(arg robot_name)
+                        robot_namespace:=$(arg robot_namespace)
+                        tf_prefix:=$(arg robot_tf)"/>  -->
+      
+      <!-- <param name="robot_description" 
+            command="$(find xacro)/xacro inorder $(find mir_description)/urdf/mir.urdf.xacro"/> Add two dashes before inorder-->
 
       <!--Spawn the MiR plattform into Gazebo-->
-      <!-- <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
-          args="-urdf -param robot_description -model $(arg robot_name) $(arg init_pose)" 
-          respawn="false" output="screen"/> -->
       <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
           args="-urdf -param robot_description -model $(arg robot_name) $(arg init_pose)" 
           respawn="false" output="screen"/>          
@@ -34,10 +27,11 @@
       <!-- Load ros_control controller configurations -->
       <rosparam file="$(find mir_ur5_description)/config/joint_state_controller.yaml" command="load" />  
       <rosparam file="$(find mir_ur5_description)/config/diffdrive_controller.yaml" command="load" subst_value="true"/>
+      <!-- <rosparam file="$(find ur_gazebo)/controller/arm_controller_ur5.yaml" command="load"/> -->
 
       <!-- Start the controllers -->
-      <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen"
-            args="joint_state_controller mobile_base_controller"/>   
+      <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen" ns="/robot1_ns"
+            args="joint_state_controller mobile_base_controller"/> <!--arm_controller -->
 
       <!--Include Kalman-filter later again. For now only use odom-->
       <!-- <include file="$(find mir_ur5_gazebo)/launch/ekf.launch.xml"/> -->
@@ -69,6 +63,26 @@
       
       <include file="$(find mir_ur5_navigation)/launch/move_base.xml">
             <arg name="local_planner" value="$(arg local_planner)"/>
-            <!-- <remap from="/robot1_ns/cmd_vel" to="/cmd_vel"/> -->
       </include>
+
+
+
+
+
+      <!--For the ur5 robot arm-->
+      <!-- <node pkg="rostopic" type="rostopic" name="fake_joint_calibration" args="pub /calibrated std_msgs/Bool true" />
+      
+      <arg name="sim" default="true" />
+      <arg name="limited" default="false"/>
+      <arg name="debug" default="false" /> -->
+        
+      <!-- Remap follow_joint_trajectory -->
+      <!-- <remap if="$(arg sim)" from="/robot1_ns/follow_joint_trajectory" to="/robot1_ns/arm_controller/follow_joint_trajectory"/> -->
+      
+      <!-- Launch moveit -->
+      <!-- <include file="$(find ur5_moveit_config)/launch/move_group.launch">
+        <arg name="limited" default="$(arg limited)"/>
+        <arg name="debug" default="$(arg debug)" />
+      </include> -->
+
 </launch>

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
         xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
-        xmlns:xacro="http://ros.org/wiki/xacro"
+        xmlns:xacro="http://wiki.ros.org/xacro"
         xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
         name="MiR200_UR5">
 
@@ -12,18 +12,31 @@
     <!-- <xacro:property name="robot_name" value='$(arg robot_name)'/> -->
 
     <!--Include all needed urdf files-->
-    <!--Include urdf of the MiR base-->
     <xacro:include filename="$(find mir_ur5_description)/urdf/mir_200_v1.urdf.xacro"/>
+    <xacro:include filename="$(find mir_ur5_description)/urdf/ur5.urdf.xacro"/>
+
     <xacro:mir_200 prefix=""/>
+
+    <!-- <xacro:ur5_robot prefix="" joint_limited="true"/> -->
+
+    <!--The position of the model was measured usind laser scanner. See Florians master thesis-->
+    <!-- <joint name="robot_to_ur5" type="fixed">
+      <parent link="base_link"/>
+      <child link="base_link_ur5"/>
+      <origin xyz="0.244311 -0.140242 0.450477" rpy="0.0 0.0 0.0"/>
+    </joint> -->
 
     <!--Link to Gazebo library-->
     <gazebo>
         <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-            <!-- <xacro:unless value="${robot_namespace == ''}">
-                <robotNamespace>$(arg robot_namespace)</robotNamespace>
-            </xacro:unless> -->
             <controlPeriod>0.001</controlPeriod>
             <legacyModeNS>true</legacyModeNS>
         </plugin>
     </gazebo>
+    <!-- Either use the part in the <gazebo> tags or the following -->
+    <!-- <xacro:diff_controller_plugin_gazebo prefix=""
+        left_wheel_joint="left_wheel_joint"
+        right_wheel_joint="right_wheel_joint"
+        wheel_separation="${2*mir_200_act_wheel_dy}"
+        wheel_radius="${mir_200_act_wheel_radius}"/> -->
 </robot>

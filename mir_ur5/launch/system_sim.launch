@@ -4,7 +4,7 @@
 
     <arg name="world_name" default="$(find mir_gazebo)/maps/world/pp_test_5.world" doc="Specifies the map the robot will be spawned in"/>
     <arg name="map_file" default="$(find mir_gazebo)/maps/pp_test_5.yaml"/>
-    <arg name="paused" default="false" doc="Starts gazebo in paused mode" />
+    <arg name="paused" default="true" doc="Starts gazebo in paused mode" />
     <arg name="gui" default="true" doc="Starts gazebo gui" />
 
     <!-- Startup Gazebo with simulated world -->
