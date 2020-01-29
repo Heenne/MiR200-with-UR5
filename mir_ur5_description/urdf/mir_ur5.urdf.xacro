@@ -13,22 +13,25 @@
 
     <!--Include all needed urdf files-->
     <xacro:include filename="$(find mir_ur5_description)/urdf/mir_200_v1.urdf.xacro"/>
+
     <xacro:include filename="$(find mir_ur5_description)/urdf/ur5.urdf.xacro"/>
+
 
     <xacro:mir_200 prefix=""/>
 
-    <!-- <xacro:ur5_robot prefix="" joint_limited="true"/> -->
+    <xacro:ur5_robot prefix="" joint_limited="true"/>
 
     <!--The position of the model was measured usind laser scanner. See Florians master thesis-->
-    <!-- <joint name="robot_to_ur5" type="fixed">
+    <joint name="robot_to_ur5" type="fixed">
       <parent link="base_link"/>
       <child link="base_link_ur5"/>
       <origin xyz="0.244311 -0.140242 0.450477" rpy="0.0 0.0 0.0"/>
-    </joint> -->
+    </joint>
 
     <!--Link to Gazebo library-->
     <gazebo>
         <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <!-- <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType> -->
             <controlPeriod>0.001</controlPeriod>
             <legacyModeNS>true</legacyModeNS>
         </plugin>

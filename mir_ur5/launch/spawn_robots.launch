@@ -5,9 +5,9 @@
     <arg name="robot1_namespace" value="$(arg robot1_name)_ns"/>
     <arg name="robot1_tf" value="$(arg robot1_name)_tf"/> 
 
-    <arg name="robot2_name" value="robot2"/>
+    <!-- <arg name="robot2_name" value="robot2"/>
     <arg name="robot2_namespace" value="$(arg robot2_name)_ns"/>
-    <arg name="robot2_tf" value="$(arg robot2_name)_tf"/> 
+    <arg name="robot2_tf" value="$(arg robot2_name)_tf"/>  -->
     
     
 
@@ -20,7 +20,7 @@
         </include>
     </group>
 
-    <group ns="$(arg robot2_namespace)">
+    <!-- <group ns="$(arg robot2_namespace)">
         <param name="tf_prefix" value="$(arg robot2_tf)" />
         <include file="$(find mir_ur5)/launch/mir_ur5.launch">
             <arg name="robot_name" value="$(arg robot2_name)"/>
@@ -28,34 +28,5 @@
             <arg name="tf_prefix" value="$(arg robot2_tf)"/>
             <arg name="init_pose" value="-x 1 -y 1 -Y 0"/>
         </include>
-    </group>
-
-    <!--group ns="2">
-        <include file="$(find mir_ur5_description)/launch/mir_ur5.launch">
-            <arg name="robot_name" value="robot2"/>
-        </include>
-    </group-->
-    
-
-    <!--Spawn in Robot 1-->
-    <!-- <group ns="$(arg robot1_namespace)">
-        <param name="tf_prefix" value="$(arg robot1_tf)"/>
-        <include file="$(find mir_ur5_description)/launch/mir_ur5.launch">
-            <arg name="robot_name" value="$(arg robot1_name)"/>
-            <arg name="robot_namespace" value="$(arg robot1_namespace)"/>
-            <arg name="robot_tf" value="$(arg robot1_tf)"/>
-            <arg name="robot_namespace" value=""/>
-            <arg name="robot_tf" value=""/>
-        </include>
     </group> -->
-    
-    <!--Spawn in Robot 2-->
-    <!--group ns="$(arg robot2_name)">
-        <param name="tf_prefix" value="robot2_tf"/>
-        <include file="$(find mir_ur5_description)/launch/mir_ur5.launch">
-            <arg name="robot_name" value="$(arg robot2_name)"/>
-            <arg name="init_pose" value="-x 1 -y 1 -Y 0"/>
-        </include>                
-    </group-->    
-    
 </launch>
