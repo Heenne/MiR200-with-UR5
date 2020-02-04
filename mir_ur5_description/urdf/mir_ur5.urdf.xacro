@@ -14,12 +14,11 @@
     <!--Include all needed urdf files-->
     <xacro:include filename="$(find mir_ur5_description)/urdf/mir_200_v1.urdf.xacro"/>
 
-    <xacro:include filename="$(find mir_ur5_description)/urdf/ur5.urdf.xacro"/>
+    <!-- <xacro:include filename="$(find mir_ur5_description)/urdf/ur5.urdf.xacro"/> -->
+    <xacro:include filename="$(find mir_ur5_description)/urdf/ur5_robot.urdf.xacro"/>
 
 
     <xacro:mir_200 prefix=""/>
-
-    <xacro:ur5_robot prefix="" joint_limited="true"/>
 
     <!--The position of the model was measured usind laser scanner. See Florians master thesis-->
     <joint name="robot_to_ur5" type="fixed">
