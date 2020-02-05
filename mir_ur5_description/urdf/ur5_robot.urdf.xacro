@@ -6,11 +6,19 @@
   <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
 
   <!-- common stuff -->
-  <!-- <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" /> -->
+  <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" />
 
   <!-- include of the xacro file -->
   <xacro:include filename="$(find mir_ur5_description)/urdf/ur5.urdf.xacro" />
 
   <!-- arm -->
   <xacro:ur5_robot prefix="" joint_limited="false" transmission_hw_interface="$(arg transmission_hw_interface)"/>
+
+  <link name="world" />
+
+  <joint name="world_joint" type="fixed">
+    <parent link="world" />
+    <child link = "base_link_ur5" />
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
 </robot>
