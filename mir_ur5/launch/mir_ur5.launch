@@ -10,6 +10,9 @@
 
       <arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface" />
 
+      <!-- By default, hide joint_state_publisher's GUI -->
+      <arg name="use_gui" default="true" />
+
       <param name="robot_description" 
             command="$(find xacro)/xacro --inorder $(find mir_ur5_description)/urdf/mir_ur5.urdf.xacro transmission_hw_interface:=$(arg transmission_hw_interface)" />
                         <!-- robot_name:=$(arg robot_name)
@@ -27,18 +30,36 @@
       <!-- Load ros_control controller configurations -->
       <rosparam file="$(find mir_ur5_description)/config/joint_state_controller.yaml" command="load" />  
       <rosparam file="$(find mir_ur5_description)/config/diffdrive_controller.yaml" command="load" subst_value="true"/>
-      <!-- <rosparam file="$(find ur_gazebo)/controller/arm_controller_ur5.yaml" command="load"/> -->
-
+      <rosparam file="$(find mir_ur5_moveit_config)/config/ros_controllers.yaml" command="load"/> <!-- Config file for the ur5 arm which contains the controller that actuates the arm joints -->
 
       <!-- Start the controllers -->
       <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen" ns="/$(arg robot_namespace)"
-            args="joint_state_controller mobile_base_controller "/> <!--arm_controller-->
+            args="joint_state_controller mobile_base_controller arm_controller"/>
 
       <!--Include Kalman-filter later again. For now only use odom-->
       <!-- <include file="$(find mir_ur5_gazebo)/launch/ekf.launch.xml"/> -->
 
+      <!-- Robot state publisher that publishes the current state of the robot to tf -->
       <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
 
+      <!-- Add passive + mimic joints to joint_states topic -->
+      <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+            <rosparam param="source_list" subst_value="true">[joint_states]</rosparam>
+            <param name="rate" value="200.0" />
+            <param name="use_gui" value="$(arg use_gui)"/>
+      </node>
+
+      <!-- Localization with amcl particle swarm -->
+      <include file="$(find mir_ur5_navigation)/launch/amcl.launch">
+            <arg name="tf_prefix" value="$(arg tf_prefix)"/>
+      </include>
+      
+      <!-- Navigation with the navigation stack -->
+      <include file="$(find mir_ur5_navigation)/launch/move_base.xml">
+            <arg name="local_planner" value="$(arg local_planner)"/>
+      </include>
+
+      <!-- Map both scan data topics on the "scan" topic and filter both scanner topics -->
       <node pkg="topic_tools" type="relay" name="b_scan_relay" args="b_scan scan"/>
       <node pkg="topic_tools" type="relay" name="f_scan_relay" args="f_scan scan"/>
 
@@ -52,18 +73,27 @@
             <remap from="scan_filtered" to="f_scan_rep117" />
       </node>
 
-      <!-- Add passive + mimic joints to joint_states topic -->
-      <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-            <rosparam param="source_list" subst_value="true">[joint_states]</rosparam>
-            <param name="rate" value="200.0" />
-      </node>
 
-      <include file="$(find mir_ur5_navigation)/launch/amcl.launch">
-            <arg name="tf_prefix" value="$(arg tf_prefix)"/>
+      <!-- Launch of the moveit package for the robot arm -->
+      <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+      <include file="$(find mir_ur5_moveit_config)/launch/planning_context.launch">
+            <arg name="load_robot_description" value="false"/> <!-- dont load the robot description again. Was allready loaded -->
       </include>
-      
-      <include file="$(find mir_ur5_navigation)/launch/move_base.xml">
-            <arg name="local_planner" value="$(arg local_planner)"/>
+
+      <remap from="/follow_joint_trajectory" to="/arm_controller/follow_joint_trajectory"/>
+
+      <!-- Run the main MoveIt! executable without trajectory execution (we do not have controllers configured by default) -->
+      <include file="$(find mir_ur5_moveit_config)/launch/move_group.launch">
+            <arg name="allow_trajectory_execution" value="true"/>
+            <arg name="fake_execution" value="false"/>
+            <arg name="info" value="true"/>
+            <arg name="debug" value="false"/>
+      </include>  
+
+      <!-- Run Rviz and load the default config to see the state of the move_group node -->
+      <include file="$(find mir_ur5_moveit_config)/launch/moveit_rviz.launch">
+            <arg name="rviz_config" value="true"/>
+            <arg name="debug" value="false"/>
       </include>
 
       <!-- send robot urdf to param server -->
