@@ -153,14 +153,14 @@
       <visual>
         <origin xyz="${mir_200_act_wheel_dx} 0 0" rpy="${pi/2} 0 ${pi/2}" />
         <geometry>
-          <mesh filename="package://mir_ur5_description/meshes/MiR200_UR5_base.stl" scale="0.001 0.001 0.001"/> <!--Scale is necessary because stl was generated in mm (correct dimensions) but stl has no measurements and mm are interpreted as m in gazebo-->
+          <mesh filename="package://mir_ur5_description/meshes/MiR200_UR5_base_LQ.stl" scale="0.001 0.001 0.001"/> <!--Scale is necessary because stl was generated in mm (correct dimensions) but stl has no measurements and mm are interpreted as m in gazebo-->
         </geometry>
         <xacro:insert_block name="material_white" />
       </visual>
       <collision>
         <origin xyz="${mir_200_act_wheel_dx} 0 0" rpy="${pi/2} 0 ${pi/2}" />
         <geometry>
-          <mesh filename="package://mir_ur5_description/meshes/MiR200_UR5_base.stl" scale="0.001 0.001 0.001"/> <!--Scale is necessary because stl was generated in mm (correct dimensions) but stl has no measurements and mm are interpreted as m in gazebo-->
+          <mesh filename="package://mir_ur5_description/meshes/MiR200_UR5_base_LQ.stl" scale="0.001 0.001 0.001"/> <!--Scale is necessary because stl was generated in mm (correct dimensions) but stl has no measurements and mm are interpreted as m in gazebo-->
         </geometry>
       </collision>
     </link>
