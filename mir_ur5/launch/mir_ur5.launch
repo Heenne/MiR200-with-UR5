@@ -11,7 +11,7 @@
       <arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface" />
 
       <!-- By default, hide joint_state_publisher's GUI -->
-      <arg name="use_gui" default="true" />
+      <arg name="use_gui" default="false" />
 
       <param name="robot_description" 
             command="$(find xacro)/xacro --inorder $(find mir_ur5_description)/urdf/mir_ur5.urdf.xacro transmission_hw_interface:=$(arg transmission_hw_interface)" />
