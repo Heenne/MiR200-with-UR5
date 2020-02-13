@@ -3,6 +3,11 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
+#include <geometry_msgs/Twist.h>
+
 enum States
 {
     plan1,
@@ -20,6 +25,16 @@ int main(int argc, char* argv[])
     spinner.start();   
     
     States states = States::plan1;
+
+    ros::Publisher cmdVelPublisher = nh.advertise<geometry_msgs::Twist>("mobile_base_controller/cmd_vel",1);
+    geometry_msgs::Twist twist;
+    twist.linear.x = 0;
+    twist.linear.y = 0;
+    twist.linear.z = 0;
+    twist.angular.x = 0;
+    twist.angular.y = 0;
+    twist.angular.z = 0;
+    cmdVelPublisher.publish(twist);
 
     // BEGIN_TUTORIAL
     //
@@ -57,11 +72,15 @@ int main(int argc, char* argv[])
     std::copy(move_group.getJointModelGroupNames().begin(), move_group.getJointModelGroupNames().end(),
                 std::ostream_iterator<std::string>(std::cout, ", "));
 
+    tf2::Quaternion quaternion;
+    quaternion.setRPY(0, M_PI_2, 0);
+    quaternion.normalize();
+
     geometry_msgs::Pose target_pose1;
-                target_pose1.orientation.w = 1.0;
-                target_pose1.position.x = 0.6;
-                target_pose1.position.y = 0.0;
-                target_pose1.position.z = 0.8;
+    target_pose1.orientation = tf2::toMsg(quaternion);
+    target_pose1.position.x = 1.0;
+    target_pose1.position.y = 0.0;
+    target_pose1.position.z = 0.15;
 
     moveit_msgs::RobotTrajectory trajectory;
     while(ros::ok())
@@ -128,11 +147,6 @@ int main(int argc, char* argv[])
 
             case States::plan2:
             {
-                ros::Duration dur(2);
-                dur.sleep();
-
-                ROS_INFO("beginning plan2");
-
                 // Cartesian Paths
                 // ^^^^^^^^^^^^^^^
                 // You can plan a Cartesian path directly by specifying a list of waypoints
@@ -143,12 +157,16 @@ int main(int argc, char* argv[])
                 waypoints.push_back(target_pose1);
 
                 geometry_msgs::Pose target_pose2 = target_pose1;
+                // target_pose2.orientation.w = 1.0;
+                // target_pose2.orientation.x = 0.0;
+                // target_pose2.orientation.y = 0.0;
+                // target_pose2.orientation.z = 0.0;
 
-                target_pose2.position.z += 0.2;
+                target_pose2.position.z -= 0.05;
                 waypoints.push_back(target_pose2);  // down
 
-                target_pose2.position.y += 0.2;
-                waypoints.push_back(target_pose2);  // right
+                // target_pose2.position.y += 0.2;
+                // waypoints.push_back(target_pose2);  // right
 
                 // Cartesian motions are frequently needed to be slower for actions such as approach and retreat
                 // grasp motions. Here we demonstrate how to reduce the speed of the robot arm via a scaling factor
