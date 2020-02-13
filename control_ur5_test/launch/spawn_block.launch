@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <param name="block_description" 
+        command="$(find xacro)/xacro --inorder $(find control_ur5_test)/urdf/block.urdf" />
+
+    <!--Spawn the MiR plattform into Gazebo-->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
+        args="-urdf -param block_description -model block -x 1.0 -y 0.0 -Y 0.0 -z 0.05" 
+        respawn="false" output="screen"/>          
+</launch>
