@@ -134,6 +134,10 @@
     </link>
     <gazebo reference="${prefix}${locationprefix}_caster_wheel_link">
       <material>Gazebo/DarkGrey</material>
+      <mu1 value="100000.0"/>
+      <mu2 value="100000.0"/>
+      <kp value="10000000.0"/>
+      <kd value="1.0"/>
     </gazebo>
   </xacro:macro>
 
