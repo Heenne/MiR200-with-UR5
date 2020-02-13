@@ -8,7 +8,12 @@ add_compile_options(-std=c++11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED
-COMPONENTS roscpp moveit_core moveit_ros_planning_interface)
+COMPONENTS roscpp 
+            moveit_core 
+            moveit_ros_planning_interface 
+            tf2
+            geometry_msgs
+            tf2_geometry_msgs)
 ## moveit_commander
 ## moveit_ros_perception
 ## moveit_visual_tools)
