@@ -3,10 +3,18 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
+#include <tf2_ros/transform_listener.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TransformStamped.h>
+
+#include <sensor_msgs/JointState.h>
+#include <gazebo_msgs/ModelState.h>
+
+ros::Publisher gazebo_model_state_pub;
+bool attach_object = false;
 
 enum States
 {
@@ -14,8 +22,53 @@ enum States
     exe1,
     plan2,
     exe2,
+    attachObject,
+    plan3,
+    exe3,
     end
 };
+
+void jointStatesCallback(const sensor_msgs::JointStatePtr &jointStates)
+{
+    if(attachObject)
+    {
+        geometry_msgs::PoseStamped pose_in;
+        pose_in.header.frame_id="wrist_3_link_ur5";
+        pose_in.header.stamp = ros::Time::now();
+        pose_in.pose.orientation.w = 1.0;
+        pose_in.pose.position.x = 0.0;
+        pose_in.pose.position.y = 0.0;
+        pose_in.pose.position.z = 0.0;
+        geometry_msgs::PoseStamped pose_out;
+        tf2_ros::Buffer tfBuffer;
+        tf2_ros::TransformListener tfListener(tfBuffer);
+        geometry_msgs::TransformStamped transformStamped;
+        
+        try
+        {
+            if(!tfBuffer.canTransform("wrist_3_link_ur5", "map", ros::Time::now(), ros::Duration(0)))
+            {
+                ros::Duration sleep(3);
+                sleep.sleep(); //Wait a second, maybe transform is then available
+            }
+            transformStamped = tfBuffer.lookupTransform("wrist_3_link_ur5", "map", ros::Time(0));
+            tf2::doTransform(pose_in, pose_out, transformStamped);
+        }
+        catch (tf2::TransformException &ex) 
+        {
+            ROS_WARN("%s",ex.what());
+            ros::Duration(1.0).sleep();
+            return;
+        }
+
+        gazebo_msgs::ModelState model_state;
+        model_state.model_name = "block";
+        model_state.pose = pose_out.pose;
+        model_state.reference_frame = "map";
+
+        gazebo_model_state_pub.publish(model_state);
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -27,6 +80,9 @@ int main(int argc, char* argv[])
     States states = States::plan1;
 
     ros::Publisher cmdVelPublisher = nh.advertise<geometry_msgs::Twist>("mobile_base_controller/cmd_vel",1);
+    ros::Subscriber joint_states_sub = nh.subscribe("joint_states", 1, jointStatesCallback);
+    gazebo_model_state_pub = nh.advertise<gazebo_msgs::ModelState>("/gazebo/set_model_state", 1);
+
     geometry_msgs::Twist twist;
     twist.linear.x = 0;
     twist.linear.y = 0;
@@ -77,6 +133,7 @@ int main(int argc, char* argv[])
     quaternion.normalize();
 
     geometry_msgs::Pose target_pose1;
+    geometry_msgs::Pose target_pose2;
     target_pose1.orientation = tf2::toMsg(quaternion);
     target_pose1.position.x = 1.0;
     target_pose1.position.y = 0.0;
@@ -156,7 +213,7 @@ int main(int argc, char* argv[])
                 std::vector<geometry_msgs::Pose> waypoints;
                 waypoints.push_back(target_pose1);
 
-                geometry_msgs::Pose target_pose2 = target_pose1;
+                target_pose2 = target_pose1;
                 // target_pose2.orientation.w = 1.0;
                 // target_pose2.orientation.x = 0.0;
                 // target_pose2.orientation.y = 0.0;
@@ -205,24 +262,55 @@ int main(int argc, char* argv[])
                 // moveit_msgs::MoveItErrorCodes error_code = move_group.move();
                 // ROS_INFO("error_code: %i", error_code.val);
                 ROS_INFO("exe2 -> end");
+                states = States::attachObject;
+                break;
+            }
+
+            case States::attachObject:
+            {
+                attach_object = true;
+                ROS_INFO("attachObject -> plan3");
+                states = States::plan3;
+                break;
+            }
+            
+            case States::plan3:
+            {
+                std::vector<geometry_msgs::Pose> waypoints;
+                waypoints.push_back(target_pose2);
+
+                target_pose2.position.z += 0.05;
+                waypoints.push_back(target_pose2);  // down
+
+                move_group.setMaxVelocityScalingFactor(0.1);
+                
+                const double jump_threshold = 0.0;
+                const double eef_step = 0.01;
+                moveit_msgs::MoveItErrorCodes error_code;
+                double fraction = move_group.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory, true, &error_code);
+                ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
+                if(error_code.val == moveit_msgs::MoveItErrorCodes::SUCCESS)
+                {
+                    ROS_INFO("plan3 -> exe3");
+                    states = States::exe3;
+                }
+                else
+                {
+                    ros::shutdown();
+                }
+                break;
+            }
+            
+            case States::exe3:
+            {
+                moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+                my_plan.trajectory_ = trajectory;
+                move_group.execute(my_plan);
+
+                ROS_INFO("exe3 -> end");
                 states = States::end;
                 break;
             }
         }
     }
-
-
-    
-
-
-    
-
-   
-
-    
-
-    
-
-    // spinner.stop();
-    // ros::spin();
 }
