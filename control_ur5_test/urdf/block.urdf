@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <robot name="box">
+    <!-- <link name="world"/> -->
     <link name="box_base">
         <visual>
             <geometry>
@@ -17,4 +18,9 @@
             <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
         </inertial>
     </link>
+    <!-- <joint name="fixed_world_joint" type="fixed">
+        <parent link="world" />
+        <child link = "box_base" />
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+    </joint> -->
 </robot>

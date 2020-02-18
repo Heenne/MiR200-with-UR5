@@ -1,20 +1,17 @@
 #include "ros/ros.h"
+#include <memory.h>
+#include <exception>
 
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
-#include <tf2_ros/transform_listener.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf/transform_listener.h>
 
-#include <geometry_msgs/Twist.h>
 #include <geometry_msgs/TransformStamped.h>
 
-#include <sensor_msgs/JointState.h>
 #include <gazebo_msgs/ModelState.h>
 
 ros::Publisher gazebo_model_state_pub;
-bool attach_object = false;
 
 enum States
 {
@@ -28,48 +25,6 @@ enum States
     end
 };
 
-void jointStatesCallback(const sensor_msgs::JointStatePtr &jointStates)
-{
-    if(attachObject)
-    {
-        geometry_msgs::PoseStamped pose_in;
-        pose_in.header.frame_id="wrist_3_link_ur5";
-        pose_in.header.stamp = ros::Time::now();
-        pose_in.pose.orientation.w = 1.0;
-        pose_in.pose.position.x = 0.0;
-        pose_in.pose.position.y = 0.0;
-        pose_in.pose.position.z = 0.0;
-        geometry_msgs::PoseStamped pose_out;
-        tf2_ros::Buffer tfBuffer;
-        tf2_ros::TransformListener tfListener(tfBuffer);
-        geometry_msgs::TransformStamped transformStamped;
-        
-        try
-        {
-            if(!tfBuffer.canTransform("wrist_3_link_ur5", "map", ros::Time::now(), ros::Duration(0)))
-            {
-                ros::Duration sleep(3);
-                sleep.sleep(); //Wait a second, maybe transform is then available
-            }
-            transformStamped = tfBuffer.lookupTransform("wrist_3_link_ur5", "map", ros::Time(0));
-            tf2::doTransform(pose_in, pose_out, transformStamped);
-        }
-        catch (tf2::TransformException &ex) 
-        {
-            ROS_WARN("%s",ex.what());
-            ros::Duration(1.0).sleep();
-            return;
-        }
-
-        gazebo_msgs::ModelState model_state;
-        model_state.model_name = "block";
-        model_state.pose = pose_out.pose;
-        model_state.reference_frame = "map";
-
-        gazebo_model_state_pub.publish(model_state);
-    }
-}
-
 int main(int argc, char* argv[])
 {
     ros::init(argc,argv,"control_ur5_node");
@@ -78,19 +33,6 @@ int main(int argc, char* argv[])
     spinner.start();   
     
     States states = States::plan1;
-
-    ros::Publisher cmdVelPublisher = nh.advertise<geometry_msgs::Twist>("mobile_base_controller/cmd_vel",1);
-    ros::Subscriber joint_states_sub = nh.subscribe("joint_states", 1, jointStatesCallback);
-    gazebo_model_state_pub = nh.advertise<gazebo_msgs::ModelState>("/gazebo/set_model_state", 1);
-
-    geometry_msgs::Twist twist;
-    twist.linear.x = 0;
-    twist.linear.y = 0;
-    twist.linear.z = 0;
-    twist.angular.x = 0;
-    twist.angular.y = 0;
-    twist.angular.z = 0;
-    cmdVelPublisher.publish(twist);
 
     // BEGIN_TUTORIAL
     //
@@ -109,7 +51,7 @@ int main(int argc, char* argv[])
     // We will use the :planning_scene_interface:`PlanningSceneInterface`
     // class to add and remove collision objects in our "virtual world" scene
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-    
+
     // Raw pointers are frequently used to refer to the planning group for improved performance.
     const robot_state::JointModelGroup* joint_model_group =
         move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
@@ -128,16 +70,22 @@ int main(int argc, char* argv[])
     std::copy(move_group.getJointModelGroupNames().begin(), move_group.getJointModelGroupNames().end(),
                 std::ostream_iterator<std::string>(std::cout, ", "));
 
-    tf2::Quaternion quaternion;
+    //Set planner if it was not specified in the ompl_planning.yaml
+    move_group.setPlannerId("RRTConnect");
+    // ros::Duration sleep(0.2);
+    // sleep.sleep();
+    ROS_INFO_NAMED("tutorial", "PlannerId: %s", move_group.getPlannerId().c_str());
+
+    tf::Quaternion quaternion;
     quaternion.setRPY(0, M_PI_2, 0);
     quaternion.normalize();
 
     geometry_msgs::Pose target_pose1;
     geometry_msgs::Pose target_pose2;
-    target_pose1.orientation = tf2::toMsg(quaternion);
-    target_pose1.position.x = 1.0;
+    tf::quaternionTFToMsg(quaternion, target_pose1.orientation);
+    target_pose1.position.x = 0.8;
     target_pose1.position.y = 0.0;
-    target_pose1.position.z = 0.15;
+    target_pose1.position.z = 0.35;
 
     moveit_msgs::RobotTrajectory trajectory;
     while(ros::ok())
@@ -268,9 +216,8 @@ int main(int argc, char* argv[])
 
             case States::attachObject:
             {
-                attach_object = true;
-                ROS_INFO("attachObject -> plan3");
-                states = States::plan3;
+                ROS_INFO("attachObject -> end");
+                states = States::end;
                 break;
             }
             

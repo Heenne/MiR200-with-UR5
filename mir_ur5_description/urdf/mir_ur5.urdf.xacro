@@ -34,6 +34,7 @@
             <controlPeriod>0.001</controlPeriod>
             <legacyModeNS>true</legacyModeNS>
         </plugin>
+        <plugin name="ros_link_attacher_plugin" filename="libgazebo_ros_link_attacher.so"/>
     </gazebo>
     <!-- Either use the part in the <gazebo> tags or the following -->
     <!-- <xacro:diff_controller_plugin_gazebo prefix=""

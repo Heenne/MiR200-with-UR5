@@ -2,5 +2,8 @@
     <group ns="robot1_ns">
         <node name="control_ur5_test_node" pkg="control_ur5_test" type="control_ur5_test_node" output="screen"/>
     </group>
+    <!-- <group ns="robot2_ns">
+        <node name="control_ur5_test_node" pkg="control_ur5_test" type="control_ur5_test_node" output="screen"/>
+    </group> -->
 </launch>
   

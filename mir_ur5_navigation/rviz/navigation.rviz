@@ -11,6 +11,8 @@ Panels:
         - /TF1/Tree1
         - /Global Map1/Potential Planner1/Autocompute Value Bounds1
         - /Local Map1/DWB Markers1/Namespaces1
+        - /Axes1
+        - /Axes2
       Splitter Ratio: 0.5761123895645142
     Tree Height: 913
   - Class: rviz/Selection
@@ -511,12 +513,19 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/Axes
-      Enabled: false
-      Length: 1
+      Enabled: true
+      Length: 0.20000000298023224
       Name: Axes
-      Radius: 0.10000000149011612
+      Radius: 0.009999999776482582
       Reference Frame: map
-      Value: false
+      Value: true
+    - Class: rviz/Axes
+      Enabled: true
+      Length: 0.20000000298023224
+      Name: Axes
+      Radius: 0.009999999776482582
+      Reference Frame: robot1_tf/wrist_3_link_ur5
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -544,15 +553,15 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 23.431415557861328
+      Distance: 5.166070461273193
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -2.382382392883301
-        Y: -1.0960769653320312
+        X: -0.4966466426849365
+        Y: -0.4045040011405945
         Z: 6.585018127225339e-6
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
