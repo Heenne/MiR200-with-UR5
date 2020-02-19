@@ -2,7 +2,7 @@
 <launch>
     <param name="/use_sim_time" value="true" /> <!--Should be set to true in gazebo_ros package empty_world.launch-->
 
-    <arg name="world_name" default="$(find mir_gazebo)/maps/world/pp_test_5.world" doc="Specifies the map the robot will be spawned in"/>
+    <arg name="world_name" default="$(find mir_ur5_gazebo)/world/empty_world.world" doc="Specifies the map the robot will be spawned in"/>
     <arg name="map_file" default="$(find mir_gazebo)/maps/pp_test_5.yaml"/>
     <arg name="paused" default="false" doc="Starts gazebo in paused mode" />
     <arg name="gui" default="true" doc="Starts gazebo gui" />
