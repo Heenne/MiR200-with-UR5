@@ -30,11 +30,9 @@
     <!--Link to Gazebo library-->
     <gazebo>
         <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-            <!-- <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType> -->
             <controlPeriod>0.001</controlPeriod>
             <legacyModeNS>true</legacyModeNS>
         </plugin>
-        <plugin name="ros_link_attacher_plugin" filename="libgazebo_ros_link_attacher.so"/>
     </gazebo>
     <!-- Either use the part in the <gazebo> tags or the following -->
     <!-- <xacro:diff_controller_plugin_gazebo prefix=""
