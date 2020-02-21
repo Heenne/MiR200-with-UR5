@@ -40,7 +40,9 @@
       <!-- <include file="$(find mir_ur5_gazebo)/launch/ekf.launch.xml"/> -->
 
       <!-- Robot state publisher that publishes the current state of the robot to tf -->
-      <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
+      <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
+            <param name="tf_prefix" type="string" value="$(arg tf_prefix)" />      
+      </node>
 
       <!-- Add passive + mimic joints to joint_states topic -->
       <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
@@ -76,25 +78,25 @@
 
       <!-- Launch of the moveit package for the robot arm -->
       <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
-      <include file="$(find mir_ur5_moveit_config)/launch/planning_context.launch">
-            <arg name="load_robot_description" value="false"/> <!-- dont load the robot description again. Was allready loaded -->
+      <!-- <include file="$(find mir_ur5_moveit_config)/launch/planning_context.launch">
+            <arg name="load_robot_description" value="false"/> 
       </include>
 
-      <remap from="/follow_joint_trajectory" to="/arm_controller/follow_joint_trajectory"/>
+      <remap from="/follow_joint_trajectory" to="/arm_controller/follow_joint_trajectory"/> -->
 
       <!-- Run the main MoveIt! executable without trajectory execution (we do not have controllers configured by default) -->
-      <include file="$(find mir_ur5_moveit_config)/launch/move_group.launch">
+      <!-- <include file="$(find mir_ur5_moveit_config)/launch/move_group.launch">
             <arg name="allow_trajectory_execution" value="true"/>
             <arg name="fake_execution" value="false"/>
             <arg name="info" value="true"/>
             <arg name="debug" value="false"/>
-      </include>  
+      </include>   -->
 
       <!-- Run Rviz and load the default config to see the state of the move_group node -->
-      <include file="$(find mir_ur5_moveit_config)/launch/moveit_rviz.launch">
+      <!-- <include file="$(find mir_ur5_moveit_config)/launch/moveit_rviz.launch">
             <arg name="rviz_config" value="$(find mir_ur5_moveit_config)/launch/moveit.rviz"/>
             <arg name="debug" value="false"/>
-      </include>
+      </include> -->
 
       <!-- send robot urdf to param server -->
       <!-- <include file="$(find ur_description)/launch/ur5_upload.launch">

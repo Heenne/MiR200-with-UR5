@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+<group ns="robot1_ns">
+    <!-- Launch of the moveit package for the robot arm -->
+      <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+      <!-- <include file="$(find mir_ur5_moveit_config)/launch/planning_context.launch">
+        <arg name="load_robot_description" value="false"/> 
+  </include> -->
+<!-- dont load the robot description again. Was allready loaded -->
+  <remap from="/follow_joint_trajectory" to="/arm_controller/follow_joint_trajectory"/>
+
+  <!-- Run the main MoveIt! executable without trajectory execution (we do not have controllers configured by default) -->
+  <include file="$(find mir_ur5_moveit_config)/launch/move_group.launch">
+        <arg name="allow_trajectory_execution" value="true"/>
+        <arg name="fake_execution" value="false"/>
+        <arg name="info" value="true"/>
+        <arg name="debug" value="false"/>
+  </include>  
+
+</group>
+</launch>
