@@ -33,9 +33,9 @@
         <joint name="wrist_3_joint" value="0" />
     </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
-    <end_effector name="empty_endeffector" parent_link="wrist_3_link_ur5" group="empty_endeffector_group" parent_group="ur5_arm" />
+    <end_effector name="empty_endeffector" parent_link="ee_link_ur5" group="empty_endeffector_group"/>
     <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
-    <virtual_joint name="FixedBaseUR5" type="fixed" parent_frame="base_link" child_link="base_link_ur5" />
+    <virtual_joint name="fixed_base" type="fixed" parent_frame="base_link" child_link="base_link_ur5" />
     <!--PASSIVE JOINT: Purpose: this element is used to mark joints that are not actuated-->
     <passive_joint name="bl_caster_rotation_joint" />
     <passive_joint name="bl_caster_wheel_joint" />
