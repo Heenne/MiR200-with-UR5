@@ -1,5 +1,5 @@
 local_costmap:
-    global_frame: robot1_tf/$(arg prefix)odom
+    global_frame: $(arg prefix)/odom
     # static_map: false Pre-Hydro parameter "static_map" unused since "plugins" is provided
     rolling_window: true
     raytrace_range: 6.0

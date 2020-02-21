@@ -12,7 +12,7 @@
   <xacro:include filename="$(find mir_ur5_description)/urdf/ur5.urdf.xacro" />
 
   <!-- arm -->
-  <xacro:ur5_robot prefix="" joint_limited="false" transmission_hw_interface="$(arg transmission_hw_interface)"/>
+  <xacro:ur5_robot prefix="$(arg tf_prefix)" joint_limited="false" transmission_hw_interface="$(arg transmission_hw_interface)"/>
 
   <!-- <link name="world" />
 

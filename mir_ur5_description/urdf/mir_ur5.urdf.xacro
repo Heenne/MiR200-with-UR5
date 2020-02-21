@@ -18,12 +18,12 @@
     <xacro:include filename="$(find mir_ur5_description)/urdf/ur5_robot.urdf.xacro"/>
 
 
-    <xacro:mir_200 prefix=""/>
+    <xacro:mir_200 prefix="$(arg tf_prefix)"/>
 
     <!--The position of the model was measured usind laser scanner. See Florians master thesis-->
     <joint name="robot_to_ur5" type="fixed">
-      <parent link="base_link"/>
-      <child link="base_link_ur5"/>
+      <parent link="$(arg tf_prefix)base_link"/>
+      <child link="$(arg tf_prefix)base_link_ur5"/>
       <origin xyz="0.244311 -0.140242 0.450477" rpy="0.0 0.0 0.0"/>
     </joint>
 
