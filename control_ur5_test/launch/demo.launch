@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="separated_block" default="true" />
+    <include if="$(arg separated_block)" 
+        file="$(find control_ur5_test)/launch/spawn_separated_block.launch"/>
+    <include unless="$(arg separated_block)" 
+        file="$(find control_ur5_test)/launch/spawn_block.launch"/>
+
+    <include file="$(find mir_ur5)/launch/system_sim.launch"/>
+</launch>
