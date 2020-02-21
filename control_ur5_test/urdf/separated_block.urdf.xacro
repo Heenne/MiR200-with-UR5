@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<robot name="box" xmlns:xacro="http://wiki.ros.org/xacro">
+    <xacro:property name="x_size" value="0.5"/>
+    <xacro:property name="y_size" value="0.5"/>
+    <xacro:property name="z_size" value="0.1"/>
+    
+    <link name="box_base">
+        <visual>
+            <geometry>
+                <box size = "${x_size / 2} ${y_size} ${z_size}"/>
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size = "${x_size / 2} ${y_size} ${z_size}"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        </inertial>
+    </link>
+
+    <!-- <gazebo reference="box_base">
+        <kp>0.0</kp>
+    </gazebo> -->
+
+    <link name="box_base_movable">
+        <visual>
+            <geometry>
+                <box size = "${x_size / 2} ${y_size} ${z_size}"/>
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size = "${x_size / 2} ${y_size} ${z_size}"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+        </inertial>
+    </link>
+
+    <!-- <gazebo reference="box_base_movable">
+        <kp>0.0</kp>
+    </gazebo> -->
+
+    <joint name="block_joint" type="prismatic">
+        <parent link="box_base" />
+        <child link = "box_base_movable" />
+        <origin xyz="${(x_size / 2) + 0.10} 0.0 0.0" rpy="0.0 0.0 0.0" />
+        <axis xyz="1 0 0" />
+        <limit lower="-3" upper="3" effort="1000" velocity="0.2"/>
+        <dynamics damping="0.01" friction="0.5"/>
+    </joint>
+</robot>
