@@ -13,7 +13,8 @@ COMPONENTS roscpp
             moveit_ros_planning_interface 
             geometry_msgs
             gazebo_msgs
-            tf)
+            tf
+            moveit_visual_tools)
 ## moveit_commander
 ## moveit_ros_perception
 ## moveit_visual_tools)
