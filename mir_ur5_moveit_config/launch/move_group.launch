@@ -6,9 +6,9 @@
   <arg     if="$(arg debug)" name="launch_prefix"
 	   value="gdb -x $(find mir_ur5_moveit_config)/launch/gdb_settings.gdb --ex run --args" />
 
-  <arg name="robot_name" default=""/>
-  <arg name="robot_namespace" default=""/>
-  <arg name="tf_prefix" default=""/>
+  <arg name="robot_name"/>
+  <arg name="robot_namespace"/>
+  <arg name="tf_prefix"/>
 
   <!-- Verbose Mode Option -->
   <arg name="info" default="$(arg debug)" />
@@ -41,15 +41,15 @@
                 " />
   -->
 
-  <arg name="load_robot_description" default="false" />
   <!-- load URDF, SRDF and joint_limits configuration -->
   <include file="$(find mir_ur5_moveit_config)/launch/planning_context.launch">
-    <arg name="load_robot_description" value="$(arg load_robot_description)" />
+    <arg name="tf_prefix" value="$(arg tf_prefix)"/>
   </include>
 
   <!-- Planning Functionality -->
   <include ns="move_group" file="$(find mir_ur5_moveit_config)/launch/planning_pipeline.launch.xml">
     <arg name="pipeline" value="$(arg pipeline)" />
+    <arg name="tf_prefix" value="$(arg tf_prefix)"/>
   </include>
 
   <!-- Trajectory Execution Functionality -->
@@ -57,6 +57,7 @@
     <arg name="moveit_manage_controllers" value="true" />
     <arg name="moveit_controller_manager" value="MiR200_UR5" unless="$(arg fake_execution)"/>
     <arg name="moveit_controller_manager" value="fake" if="$(arg fake_execution)"/>
+    <arg name="tf_prefix" value="$(arg tf_prefix)"/>
   </include>
 
   <!-- Sensors Functionality -->

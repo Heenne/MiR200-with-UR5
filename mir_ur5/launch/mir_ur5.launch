@@ -3,7 +3,7 @@
       <arg name="robot_name"/>
       <arg name="tf_prefix"/>
       <arg name="robot_namespace"/>
-      <arg name="prefix" default="$(arg tf_prefix)/"/> <!--diff drive needs this to be set-->
+      <arg name="prefix" default="$(arg tf_prefix)"/> <!--diff drive needs this to be set-->
       <arg name="init_pose" default="-x 0.0 -y 0.0 -Y 0.0 -z 0.0"/>
 
       <arg name="local_planner" default="dwa" doc="Local planner can be either dwa, eband, base, teb or pose" />
@@ -14,7 +14,7 @@
       <arg name="use_gui" default="false" />
 
       <param name="robot_description" 
-            command="$(find xacro)/xacro --inorder $(find mir_ur5_description)/urdf/mir_ur5.urdf.xacro transmission_hw_interface:=$(arg transmission_hw_interface)  tf_prefix:=$(arg tf_prefix)/" />
+            command="$(find xacro)/xacro $(find mir_ur5_description)/urdf/mir_ur5.urdf.xacro transmission_hw_interface:=$(arg transmission_hw_interface)  tf_prefix:=$(arg tf_prefix)" />
                         <!-- robot_name:=$(arg robot_name)
                         robot_namespace:=$(arg robot_namespace)-->
                         
@@ -30,19 +30,17 @@
       <!-- Load ros_control controller configurations -->
       <rosparam file="$(find mir_ur5_description)/config/joint_state_controller.yaml" command="load" />  
       <rosparam file="$(find mir_ur5_description)/config/diffdrive_controller.yaml" command="load" subst_value="true"/>
-      <rosparam file="$(find mir_ur5_moveit_config)/config/ros_controllers.yaml" command="load"/> <!-- Config file for the ur5 arm which contains the controller that actuates the arm joints -->
+      <rosparam file="$(find mir_ur5_moveit_config)/config/arm_controller.yaml" command="load" subst_value="true"/> <!-- Config file for the ur5 arm which contains the controller that actuates the arm joints -->
 
       <!-- Start the controllers -->
       <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen" ns="/$(arg robot_namespace)"
-            args="joint_state_controller mobile_base_controller arm_controller"/> 
+            args="joint_state_controller mobile_base_controller arm_controller"/> <!-- -->
 
       <!--Include Kalman-filter later again. For now only use odom-->
       <!-- <include file="$(find mir_ur5_gazebo)/launch/ekf.launch.xml"/> -->
 
       <!-- Robot state publisher that publishes the current state of the robot to tf -->
-      <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
-            <!-- <param name="tf_prefix" type="string" value="$(arg tf_prefix)" />       -->
-      </node>
+      <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
 
       <!-- Add passive + mimic joints to joint_states topic -->
       <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
@@ -76,57 +74,10 @@
             <remap from="scan_filtered" to="f_scan_rep117" />
       </node>
 
-
-      <!-- Launch of the moveit package for the robot arm -->
-      <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
-      <!-- <include file="$(find mir_ur5_moveit_config)/launch/planning_context.launch">
-            <arg name="load_robot_description" value="false"/> 
+      <!-- Start all necessary moveit files -->
+      <include file="$(find mir_ur5)/launch/start_moveit.launch">
+            <arg name="robot_name" value="$(arg robot_name)"/>
+            <arg name="robot_namespace" value="$(arg robot_namespace)"/>
+            <arg name="tf_prefix" value="$(arg tf_prefix)"/>
       </include>
-
-      <remap from="/follow_joint_trajectory" to="/arm_controller/follow_joint_trajectory"/> -->
-
-      <!-- Run the main MoveIt! executable without trajectory execution (we do not have controllers configured by default) -->
-      <!-- <include file="$(find mir_ur5_moveit_config)/launch/move_group.launch">
-            <arg name="allow_trajectory_execution" value="true"/>
-            <arg name="fake_execution" value="false"/>
-            <arg name="info" value="true"/>
-            <arg name="debug" value="false"/>
-      </include>   -->
-
-      <!-- Run Rviz and load the default config to see the state of the move_group node -->
-      <!-- <include file="$(find mir_ur5_moveit_config)/launch/moveit_rviz.launch">
-            <arg name="rviz_config" value="$(find mir_ur5_moveit_config)/launch/moveit.rviz"/>
-            <arg name="debug" value="false"/>
-      </include> -->
-
-      <!-- send robot urdf to param server -->
-      <!-- <include file="$(find ur_description)/launch/ur5_upload.launch">
-            <arg name="limited" value="true"/>
-      </include> -->
-      
-      <!-- push robot_description to factory and spawn robot in gazebo -->
-      <!-- <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -z 0.1" respawn="false" output="screen" /> -->
-      
-      <!-- <include file="$(find ur_gazebo)/launch/controller_utils.launch"/> -->
-      
-      <!-- <rosparam file="$(find ur_gazebo)/controller/arm_controller_ur5.yaml" command="load"/>
-      <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn arm_controller" respawn="false" output="screen"/> -->
-
-
-      <!--For the ur5 robot arm-->
-      <!-- <node pkg="rostopic" type="rostopic" name="fake_joint_calibration" args="pub /calibrated std_msgs/Bool true" />
-      
-      <arg name="sim" default="true" />
-      <arg name="limited" default="false"/>
-      <arg name="debug" default="false" /> -->
-        
-      <!-- Remap follow_joint_trajectory -->
-      <!-- <remap if="$(arg sim)" from="/robot1_ns/follow_joint_trajectory" to="/robot1_ns/arm_controller/follow_joint_trajectory"/> -->
-      
-      <!-- Launch moveit -->
-      <!-- <include file="$(find ur5_moveit_config)/launch/move_group.launch">
-        <arg name="limited" default="$(arg limited)"/>
-        <arg name="debug" default="$(arg debug)" />
-      </include> -->
-
 </launch>

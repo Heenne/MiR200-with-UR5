@@ -38,12 +38,12 @@
 arm_controller:
   type: position_controllers/JointTrajectoryController
   joints:
-    - robot1_tf/shoulder_pan_joint
-    - robot1_tf/shoulder_lift_joint
-    - robot1_tf/elbow_joint
-    - robot1_tf/wrist_1_joint
-    - robot1_tf/wrist_2_joint
-    - robot1_tf/wrist_3_joint
+    - $(arg tf_prefix)shoulder_pan_joint
+    - $(arg tf_prefix)shoulder_lift_joint
+    - $(arg tf_prefix)elbow_joint
+    - $(arg tf_prefix)wrist_1_joint
+    - $(arg tf_prefix)wrist_2_joint
+    - $(arg tf_prefix)wrist_3_joint
   constraints:
     goal_time: 0.6
     stopped_velocity_tolerance: 0.05

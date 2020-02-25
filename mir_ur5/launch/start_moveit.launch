@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="robot_name"/>
+    <arg name="tf_prefix"/>
+    <arg name="robot_namespace"/>
+
+    <!-- Launch of the moveit package for the robot arm -->
+
+    <remap from="/follow_joint_trajectory" to="/arm_controller/follow_joint_trajectory"/>
+
+    <!-- Run the main MoveIt! executable without trajectory execution (we do not have controllers configured by default) -->
+    <include file="$(find mir_ur5_moveit_config)/launch/move_group.launch">
+        <arg name="allow_trajectory_execution" value="true"/>
+        <arg name="fake_execution" value="false"/>
+        <arg name="info" value="true"/>
+        <arg name="debug" value="false"/>
+        <arg name="robot_name" value="$(arg robot_name)"/>
+        <arg name="robot_namespace" value="$(arg robot_namespace)"/>
+        <arg name="tf_prefix" value="$(arg tf_prefix)"/>    
+    </include>
+
+    <!-- Run Rviz and load the default config to see the state of the move_group node -->
+    <include file="$(find mir_ur5_moveit_config)/launch/moveit_rviz.launch">
+        <arg name="rviz_config" value="$(find mir_ur5_moveit_config)/launch/moveit.rviz"/>
+        <arg name="debug" value="false"/>
+    </include>
+</launch>
