@@ -6,6 +6,10 @@
   <arg     if="$(arg debug)" name="launch_prefix"
 	   value="gdb -x $(find mir_ur5_moveit_config)/launch/gdb_settings.gdb --ex run --args" />
 
+  <arg name="robot_name" default=""/>
+  <arg name="robot_namespace" default=""/>
+  <arg name="tf_prefix" default=""/>
+
   <!-- Verbose Mode Option -->
   <arg name="info" default="$(arg debug)" />
   <arg unless="$(arg info)" name="command_args" value="" />

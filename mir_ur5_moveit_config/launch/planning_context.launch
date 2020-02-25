@@ -5,6 +5,10 @@
   <!-- The name of the parameter under which the URDF is loaded -->
   <arg name="robot_description" default="robot_description"/>
 
+  <arg name="robot_name" default=""/>
+  <arg name="robot_namespace" default=""/>
+  <arg name="tf_prefix" default=""/>
+
   <!-- Load universal robot description format (URDF) -->
   <param if="$(arg load_robot_description)" name="$(arg robot_description)" command="xacro  '$(find mir_ur5_description)/urdf/mir_ur5.urdf.xacro'"/>
 

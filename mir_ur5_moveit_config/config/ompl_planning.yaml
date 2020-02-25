@@ -146,7 +146,7 @@ ur5_arm:
     - LazyPRMstar
     - SPARS
     - SPARStwo
-  projection_evaluator: joints(shoulder_pan_joint,shoulder_lift_joint)
+  projection_evaluator: joints(robot1_tf/shoulder_pan_joint,robot1_tf/shoulder_lift_joint)
   longest_valid_segment_fraction: 0.005
 empty_endeffector_group:
   default_planner_config: ""

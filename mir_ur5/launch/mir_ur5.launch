@@ -30,11 +30,11 @@
       <!-- Load ros_control controller configurations -->
       <rosparam file="$(find mir_ur5_description)/config/joint_state_controller.yaml" command="load" />  
       <rosparam file="$(find mir_ur5_description)/config/diffdrive_controller.yaml" command="load" subst_value="true"/>
-      <!--rosparam file="$(find mir_ur5_moveit_config)/config/ros_controllers.yaml" command="load"/--> <!-- Config file for the ur5 arm which contains the controller that actuates the arm joints -->
+      <rosparam file="$(find mir_ur5_moveit_config)/config/ros_controllers.yaml" command="load"/> <!-- Config file for the ur5 arm which contains the controller that actuates the arm joints -->
 
       <!-- Start the controllers -->
       <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen" ns="/$(arg robot_namespace)"
-            args="joint_state_controller mobile_base_controller "/> <!--arm_controller-->
+            args="joint_state_controller mobile_base_controller arm_controller"/> 
 
       <!--Include Kalman-filter later again. For now only use odom-->
       <!-- <include file="$(find mir_ur5_gazebo)/launch/ekf.launch.xml"/> -->
