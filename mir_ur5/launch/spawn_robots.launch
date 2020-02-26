@@ -7,12 +7,11 @@
 
     <arg name="robot2_name" value="robot2"/>
     <arg name="robot2_namespace" value="$(arg robot2_name)_ns"/>
-    <arg name="robot2_tf" value="$(arg robot2_name)_tf"/> 
+    <arg name="robot2_tf" value="$(arg robot2_name)_tf/"/> 
     
     
 
     <group ns="$(arg robot1_namespace)">
-        <!-- <param name="tf_prefix" value="$(arg robot1_tf)" /> -->
         <include file="$(find mir_ur5)/launch/mir_ur5.launch">
             <arg name="robot_name" value="$(arg robot1_name)"/>
             <arg name="robot_namespace" value="$(arg robot1_namespace)"/>
@@ -20,13 +19,12 @@
         </include>
     </group>
 
-    <!-- <group ns="$(arg robot2_namespace)">
-        <param name="tf_prefix" value="$(arg robot2_tf)" />
+    <group ns="$(arg robot2_namespace)">
         <include file="$(find mir_ur5)/launch/mir_ur5.launch">
             <arg name="robot_name" value="$(arg robot2_name)"/>
             <arg name="robot_namespace" value="$(arg robot2_namespace)"/>
             <arg name="tf_prefix" value="$(arg robot2_tf)"/>
             <arg name="init_pose" value="-x 2 -y 0 -Y 3.141"/>
         </include>
-    </group> -->
+    </group>
 </launch>
