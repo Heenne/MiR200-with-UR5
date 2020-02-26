@@ -5,7 +5,7 @@
 -->
 <robot name="MiR200_UR5"
         xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <xacro:arg name="tf_prefix" default="blabla"/>
+    <xacro:arg name="tf_prefix" default=""/>
 
     <!--GROUPS: Representation of a set of joints and links. This can be useful for specifying DOF to plan for, defining arms, end effectors, etc-->
     <!--LINKS: When a link is specified, the parent joint of that link (if it exists) is automatically included-->
