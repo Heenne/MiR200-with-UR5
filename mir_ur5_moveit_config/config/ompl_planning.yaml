@@ -30,7 +30,8 @@ planner_configs:
     goal_bias: 0.05  # When close to goal select goal, with this probability? default: 0.05
   RRTConnect:
     type: geometric::RRTConnect
-    range: 0.0  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
+    #changed this value from 0.0 to 0.3125 as seen in this paper: https://pure.tudelft.nl/portal/files/29453824/An_Empirical_Study_of_Single_Query_Motion_Planning_for_Grasp_Execution.pdf
+    range: 0.3125  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
   RRTstar:
     type: geometric::RRTstar
     range: 0.0  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
