@@ -21,10 +21,14 @@
             <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
         </inertial>
     </link>
-
-    <!-- <gazebo reference="box_base">
-        <kp>0.0</kp>
-    </gazebo> -->
+    
+    <gazebo reference="box_base">
+        <material>Gazebo/DarkGrey</material>
+        <mu1 value="100000.0"/>
+        <mu2 value="100000.0"/>
+        <kp value="10000000.0"/>
+        <kd value="1.0"/>
+    </gazebo>
 
     <link name="box_base_movable">
         <visual>
@@ -44,9 +48,13 @@
         </inertial>
     </link>
 
-    <!-- <gazebo reference="box_base_movable">
-        <kp>0.0</kp>
-    </gazebo> -->
+    <gazebo reference="box_base_movable">
+        <material>Gazebo/DarkGrey</material>
+        <mu1 value="100000.0"/>
+        <mu2 value="100000.0"/>
+        <kp value="10000000.0"/>
+        <kd value="1.0"/>
+    </gazebo>
 
     <joint name="block_joint" type="prismatic">
         <parent link="box_base" />
