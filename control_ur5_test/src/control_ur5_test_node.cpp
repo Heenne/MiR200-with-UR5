@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
 
                 // Planning with constraints can be slow because every sample must call an inverse kinematics solver.
                 // Lets increase the planning time from the default 5 seconds to be sure the planner has enough time to succeed.
-                move_group.setPlanningTime(10.0);
+                move_group.setPlanningTime(1.0);
                 
                 bool success = (move_group.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
@@ -238,7 +238,7 @@ int main(int argc, char* argv[])
                 else
                 {
                     ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s FAILED");
-                    ros::shutdown();
+                    // ros::shutdown();
                 }
 
                 
@@ -261,9 +261,15 @@ int main(int argc, char* argv[])
                 /* Uncomment below line when working with a real robot */
                 moveit_msgs::MoveItErrorCodes error_code = move_group.move();
                 ROS_INFO("error_code: %i", error_code.val);
-
-                ROS_INFO("exe1 -> plan2");
-                states=States::plan2;
+                if(error_code.val == -1)
+                {
+                    states = States::plan1;
+                }
+                else
+                {
+                    ROS_INFO("exe1 -> plan2");
+                    states=States::plan2;
+                }
                 break;
             }
 
