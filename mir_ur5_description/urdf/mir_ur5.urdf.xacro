@@ -15,7 +15,9 @@
     <xacro:include filename="$(find mir_ur5_description)/urdf/mir_200_v1.urdf.xacro"/>
 
     <!-- <xacro:include filename="$(find mir_ur5_description)/urdf/ur5.urdf.xacro"/> -->
-    <xacro:include filename="$(find mir_ur5_description)/urdf/ur5_robot.urdf.xacro"/>
+    <xacro:include filename="$(find mir_ur5_description)/urdf/ur5_robot.urdf.xacro">
+        <arg name="tf_prefix" value="$(arg tf_prefix)"/>
+    </xacro:include>
 
 
     <xacro:mir_200 prefix="$(arg tf_prefix)"/>

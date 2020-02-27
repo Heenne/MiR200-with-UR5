@@ -4,6 +4,7 @@
        name="ur5" >
 
   <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
+  <xacro:arg name="tf_prefix" default=""/>
 
   <!-- common stuff -->
   <!-- <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" /> -->

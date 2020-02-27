@@ -321,24 +321,20 @@
     <xacro:ur_arm_gazebo prefix="${prefix}" />
 
     <!-- ROS base_link to UR 'Base' Coordinates transform -->
-    <link name="${prefix}base_ur5"/>
-    <joint name="${prefix}base_link_ur5-base_fixed_joint" type="fixed">
-      <!-- NOTE: this rotation is only needed as long as base_link_ur5 itself is
-                 not corrected wrt the real robot (ie: rotated over 180
-                 degrees)
-      -->
+    <!-- <link name="${prefix}base_ur5"/> -->
+    <!-- <joint name="${prefix}base_link_ur5-base_fixed_joint" type="fixed">
       <origin xyz="0 0 0" rpy="0 0 ${-pi}"/>
       <parent link="${prefix}base_link_ur5"/>
       <child link="${prefix}base_ur5"/>
-    </joint>
+    </joint> -->
 
     <!-- Frame coincident with all-zeros TCP on UR controller -->
-    <link name="${prefix}tool0"/>
+    <!-- <link name="${prefix}tool0"/>
     <joint name="${prefix}wrist_3_link_ur5-tool0_fixed_joint" type="fixed">
       <origin xyz="0 ${wrist_3_length} 0" rpy="${pi/-2.0} 0 0"/>
       <parent link="${prefix}wrist_3_link_ur5"/>
       <child link="${prefix}tool0"/>
-    </joint>
+    </joint> -->
 
   </xacro:macro>
 </robot>
