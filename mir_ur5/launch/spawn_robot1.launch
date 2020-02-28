@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+    <!--Variables for the robot1-->
+    <arg name="robot1_name" value="robot1"/>
+    <arg name="robot1_namespace" value="$(arg robot1_name)_ns"/>
+    <arg name="robot1_tf" value="$(arg robot1_name)_tf/"/> 
+    
+    <group ns="$(arg robot1_namespace)">
+        <include file="$(find mir_ur5)/launch/mir_ur5.launch">
+            <arg name="robot_name" value="$(arg robot1_name)"/>
+            <arg name="robot_namespace" value="$(arg robot1_namespace)"/>
+            <arg name="tf_prefix" value="$(arg robot1_tf)"/>
+        </include>
+    </group>
+</launch>
