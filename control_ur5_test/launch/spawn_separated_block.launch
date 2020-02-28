@@ -7,6 +7,6 @@
 
     <!--Spawn the MiR plattform into Gazebo-->
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
-        args="-urdf -param block_description -model block -x 0.75 -y 0.0 -Y 0.0 -z 0.05" 
+        args="-urdf -param block_description -model block -x 1.3 -y 0.0 -Y 0.0 -z 0.05" 
         respawn="false" output="screen"/>          
 </launch>
