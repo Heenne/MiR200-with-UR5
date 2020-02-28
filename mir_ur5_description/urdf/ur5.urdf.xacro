@@ -302,6 +302,13 @@
       </xacro:cylinder_inertial>
     </link>
 
+    <gazebo reference="${prefix}wrist_3_link_ur5">
+      <kp value="0.0"/>
+      <kd value="1.0"/>
+      <minDepth value="0.2"/>
+      <maxVel value="0"/>
+    </gazebo>   
+
     <joint name="${prefix}ee_fixed_joint" type="fixed">
       <parent link="${prefix}wrist_3_link_ur5" />
       <child link = "${prefix}ee_link_ur5" />
@@ -316,6 +323,13 @@
         <origin rpy="0 0 0" xyz="-0.01 0 0"/>
       </collision>
     </link>
+
+    <gazebo reference="${prefix}ee_link_ur5">
+      <kp value="0.0"/>
+      <kd value="1.0"/>
+      <minDepth value="0.2"/>
+      <maxVel value="0"/>
+    </gazebo>   
 
     <xacro:ur_arm_transmission prefix="${prefix}" hw_interface="${transmission_hw_interface}" />
     <xacro:ur_arm_gazebo prefix="${prefix}" />
