@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
     tf::quaternionTFToMsg(quaternion, target_pose1.orientation);
     target_pose1.position.x = 0.8;
     target_pose1.position.y = 0.0;
-    target_pose1.position.z = 0.35;
+    target_pose1.position.z = 0.15;
 
     moveit_msgs::RobotTrajectory trajectory;
     while(ros::ok())
