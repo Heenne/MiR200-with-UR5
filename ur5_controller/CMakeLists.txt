@@ -118,9 +118,15 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/ur5_controller.cpp
-# )
+add_library(ur5_controller_master
+    include/ur5_controller/ur5_controller_master.h
+    src/ur5_controller_master.cpp
+)
+
+add_library(ur5_controller_slave
+    include/ur5_controller/ur5_controller_slave.h
+    src/ur5_controller_slave.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -143,7 +149,8 @@ add_executable(ur5_controller_node src/ur5_controller_node.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ur5_controller_node ${catkin_LIBRARIES})
+target_link_libraries(ur5_controller_node 
+    ur5_controller_master ur5_controller_slave ${catkin_LIBRARIES})
 
 #############
 ## Install ##
