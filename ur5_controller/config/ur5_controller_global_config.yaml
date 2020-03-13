@@ -1,1 +1,4 @@
 number_of_robots: 2
+robot_name: "robot$(arg index)"
+robot_namespace: "robot$(arg index)_ns"
+robot_tf_prefix: "robot$(arg index)_tf"
