@@ -1,5 +1,5 @@
 <launch>
-    <group ns="robot2_ns">
+    <group ns="robot0_ns">
         <node name="control_ur5_test_node" pkg="control_ur5_test" type="control_ur5_test_node" output="screen"/>
     </group>
 </launch>

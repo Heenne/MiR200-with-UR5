@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
                 ROS_INFO("error_code: %i", error_code.val);
                 if(error_code.val == -1)
                 {
-                    states = States::plan1;
+                    states = States::exe1;
                 }
                 else
                 {

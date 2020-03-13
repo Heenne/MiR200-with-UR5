@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="rosservice" type="rosservice" name="attach_obj0" args="call --wait /link_attacher_node/attach 'robot0' 'robot0_tf/wrist_3_link_ur5' 'block' 'box_base_movable'"/>
+</launch>
