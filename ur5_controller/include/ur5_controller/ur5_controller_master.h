@@ -7,6 +7,6 @@ class UR5ControllerMaster
     public:
 
     private:
-
+        
 
 };

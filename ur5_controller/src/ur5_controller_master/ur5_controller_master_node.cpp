@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[])
 {
-    ros::init(argc,argv,"ur5_controller");
+    ros::init(argc,argv,"ur5_controller_master_node");
     ros::NodeHandle global_node_handle_;
     ros::NodeHandle private_node_handle_("~");
 
@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
     global_node_handle_.param<int>("number_of_robots", number_of_robots, 2);
     for(int counter = 0; counter < number_of_robots; counter++)
     {
-        
+        ros::NodeHandle robot_node_handle_("robot" + counter);
     }
     
     // int bla;
