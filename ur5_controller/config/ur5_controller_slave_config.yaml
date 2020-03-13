@@ -1,1 +1,2 @@
-planning_timeout_attempts: 10
+planning_attempts_timeout_: 10
+planning_time: 1.0
