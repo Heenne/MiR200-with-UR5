@@ -8,7 +8,10 @@ add_compile_options(-std=c++11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-    roscpp)
+    roscpp
+    moveit_core 
+    moveit_ros_planning_interface
+    geometry_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -120,12 +123,12 @@ include_directories(
 ## Declare a C++ library
 add_library(ur5_controller_master
     include/ur5_controller/ur5_controller_master.h
-    src/ur5_controller_master.cpp
+    src/ur5_controller_master/ur5_controller_master.cpp
 )
 
 add_library(ur5_controller_slave
     include/ur5_controller/ur5_controller_slave.h
-    src/ur5_controller_slave.cpp
+    src/ur5_controller_slave/ur5_controller_slave.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -136,7 +139,8 @@ add_library(ur5_controller_slave
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(ur5_controller_node src/ur5_controller_node.cpp)
+add_executable(ur5_controller_master_node src/ur5_controller_master/ur5_controller_master_node.cpp)
+add_executable(ur5_controller_slave_node src/ur5_controller_slave/ur5_controller_slave_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -149,8 +153,10 @@ add_executable(ur5_controller_node src/ur5_controller_node.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ur5_controller_node 
-    ur5_controller_master ur5_controller_slave ${catkin_LIBRARIES})
+target_link_libraries(ur5_controller_master_node 
+    ur5_controller_master ${catkin_LIBRARIES})
+target_link_libraries(ur5_controller_slave_node 
+    ur5_controller_slave ${catkin_LIBRARIES})
 
 #############
 ## Install ##
