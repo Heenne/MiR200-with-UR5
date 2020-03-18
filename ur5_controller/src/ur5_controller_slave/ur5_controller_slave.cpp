@@ -7,7 +7,7 @@ UR5ControllerSlave::UR5ControllerSlave(ros::NodeHandle robot_node_handle)
     //Reading all parameter
     this->readParameters();
 
-    this->ur5_controller_state_ = UR5ControllerSlave::UR5ControllerState::idle;
+    this->ur5_controller_state_ = UR5ControllerState::UR5ControllerSlaveState::idle;
 
     ROS_INFO_STREAM("Created ur5 controller slave with following data:");
     ROS_INFO_STREAM("   - index: " << std::to_string(this->robot_index_));
@@ -15,16 +15,22 @@ UR5ControllerSlave::UR5ControllerSlave(ros::NodeHandle robot_node_handle)
     ROS_INFO_STREAM("   - robot_namespace: " << this->robot_namespace_);
     ROS_INFO_STREAM("   - robot_tf_prefix: " << this->robot_tf_prefix_);
 
-    this->move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(PLANNING_GROUP);
-    this->joint_model_group_ = std::shared_ptr<const moveit::core::JointModelGroup>(this->move_group_->getCurrentState()->getJointModelGroup(PLANNING_GROUP));
-    this->move_group_->setPlannerId("RRTConnect"); //Should be set as default planner in the configuration of the moveit package. But set explicitly to be sure.
-    this->move_group_->setPlanningTime(1.0);
+    try
+    {
+        this->move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(PLANNING_GROUP);
+        this->joint_model_group_ = std::shared_ptr<const moveit::core::JointModelGroup>(this->move_group_->getCurrentState()->getJointModelGroup(PLANNING_GROUP));
+        this->move_group_->setPlannerId("RRTConnect"); //Should be set as default planner in the configuration of the moveit package. But set explicitly to be sure.
+        this->move_group_->setPlanningTime(1.0);
+    }
+    catch(const std::exception &e)
+    {
+        ROS_WARN("Error during the initialization of the MoveIt components. No robot arm movement possible!");
+    }
 }
 
-bool UR5ControllerSlave::setTargetPose(tf::Pose target_pose)
+void UR5ControllerSlave::execute(const ros::TimerEvent &timer_event_info)
 {
-    this->target_pose_ = std::make_shared<tf::Pose>(target_pose);
-    return true;
+
 }
 
 bool UR5ControllerSlave::planTrajectory()
@@ -74,15 +80,21 @@ bool UR5ControllerSlave::planTrajectory()
 
 bool UR5ControllerSlave::planTrajectory(tf::Pose target_pose)
 {
-    if(!this->setTargetPose(target_pose))
-    {
-        return false;
-    }
-
+    this->setTargetPose(target_pose);
     return this->planTrajectory();
 }
 
-//Getter/ Setter
+#pragma region Getter/Setter
+void UR5ControllerSlave::setTargetPose(tf::Pose target_pose)
+{
+    this->target_pose_ = std::make_shared<tf::Pose>(target_pose);
+}
+
+tf::Pose UR5ControllerSlave::getTargetPose()
+{
+    return *this->target_pose_;
+}
+
 void UR5ControllerSlave::setPlanningTimeoutAttempts(int planning_timeout_attempts)
 {
     this->planning_attempts_timeout_ = planning_timeout_attempts;
@@ -93,7 +105,12 @@ int UR5ControllerSlave::getPlanningTimeoutAttempts()
     return this->planning_attempts_timeout_;
 }
 
-//Private methods
+std::string UR5ControllerSlave::getRobotName()
+{
+    return this->robot_name_;
+}
+#pragma endregion
+
 bool UR5ControllerSlave::readParameters()
 {
     this->robot_node_handle_.param<int>("index", this->robot_index_, 0);
@@ -112,30 +129,71 @@ geometry_msgs::Pose UR5ControllerSlave::poseTFtoGeometryMsgs(tf::Pose pose)
     return geometry_pose;
 }
 
-bool UR5ControllerSlave::setControllerState(UR5ControllerState target_ur5_controller_state)
+tf::Pose UR5ControllerSlave::poseGeometrytoTFMsgs(geometry_msgs::Pose pose)
+{
+    tf::Pose tf_pose;
+    tf::poseMsgToTF(pose, tf_pose);
+    tf_pose.setRotation(tf_pose.getRotation().normalize());
+    return tf_pose;
+}
+
+#pragma region Callbacks
+/**
+ * @brief 
+ * 
+ */
+void UR5ControllerSlave::robotArmInstructionGoalCb()
+{
+    mir_ur5_msgs::RobotArmInstructionGoalConstPtr robot_arm_instruction_goal = this->robot_arm_instruction_as_->acceptNewGoal();
+}
+
+/**
+ * @brief 
+ * 
+ * @param state 
+ * @param result 
+ */
+void UR5ControllerSlave::robotArmInstructionDoneCb(const actionlib::SimpleClientGoalState &state,
+                                const mir_ur5_msgs::RobotArmInstructionActionResultConstPtr &result)
+{
+
+}
+
+/**
+ * @brief 
+ * 
+ * @param feedback 
+ */
+void UR5ControllerSlave::robotArmInstructionFeedbackCb(const mir_ur5_msgs::RobotArmInstructionFeedback::ConstPtr& feedback)
+{
+    
+}
+#pragma endregion
+
+bool UR5ControllerSlave::setControllerState(UR5ControllerState::UR5ControllerSlaveState target_ur5_controller_state)
 {
     bool transition_result = false;
     switch (this->ur5_controller_state_)
     {
-        case UR5ControllerState::idle:
+        case UR5ControllerState::UR5ControllerSlaveState::idle:
         {
             transition_result = this->checkTransitionFromIdle(target_ur5_controller_state);
             break;
         }
 
-        case UR5ControllerState::planning:
+        case UR5ControllerState::UR5ControllerSlaveState::planning:
         {
             transition_result = this->checkTransitionFromPlanning(target_ur5_controller_state);
             break;
         }
 
-        case UR5ControllerState::plan_found:
+        case UR5ControllerState::UR5ControllerSlaveState::plan_found:
         {
             transition_result = this->checkTransitionFromPlanFound(target_ur5_controller_state);
             break;
         }
 
-        case UR5ControllerState::executing_plan:
+        case UR5ControllerState::UR5ControllerSlaveState::executing_plan:
         {
             transition_result = this->checkTransitionFromExecutingPlan(target_ur5_controller_state);
             break;
@@ -155,26 +213,26 @@ bool UR5ControllerSlave::setControllerState(UR5ControllerState target_ur5_contro
     
 }
 
-bool UR5ControllerSlave::checkTransitionFromIdle(UR5ControllerState target_ur_controller_state)
+bool UR5ControllerSlave::checkTransitionFromIdle(UR5ControllerState::UR5ControllerSlaveState target_ur_controller_state)
 {
     switch(target_ur_controller_state)
     {
-        case UR5ControllerState::idle:
+        case UR5ControllerState::UR5ControllerSlaveState::idle:
         {
             return false;
             break;
         }
-        case UR5ControllerState::planning:
+        case UR5ControllerState::UR5ControllerSlaveState::planning:
         {
             return true;
             break;
         }
-        case UR5ControllerState::plan_found:
+        case UR5ControllerState::UR5ControllerSlaveState::plan_found:
         {
             return false;
             break;
         }
-        case UR5ControllerState::executing_plan:
+        case UR5ControllerState::UR5ControllerSlaveState::executing_plan:
         {
             return false;
             break;
@@ -187,26 +245,26 @@ bool UR5ControllerSlave::checkTransitionFromIdle(UR5ControllerState target_ur_co
     }
 }
 
-bool UR5ControllerSlave::checkTransitionFromPlanning(UR5ControllerState target_ur_controller_state)
+bool UR5ControllerSlave::checkTransitionFromPlanning(UR5ControllerState::UR5ControllerSlaveState target_ur_controller_state)
 {
     switch(target_ur_controller_state)
     {
-        case UR5ControllerState::idle:
+        case UR5ControllerState::UR5ControllerSlaveState::idle:
         {
             return true;
             break;
         }
-        case UR5ControllerState::planning:
+        case UR5ControllerState::UR5ControllerSlaveState::planning:
         {
             return false;
             break;
         }
-        case UR5ControllerState::plan_found:
+        case UR5ControllerState::UR5ControllerSlaveState::plan_found:
         {
             return true;
             break;
         }
-        case UR5ControllerState::executing_plan:
+        case UR5ControllerState::UR5ControllerSlaveState::executing_plan:
         {
             return false;
             break;
@@ -219,26 +277,26 @@ bool UR5ControllerSlave::checkTransitionFromPlanning(UR5ControllerState target_u
     }
 }
 
-bool UR5ControllerSlave::checkTransitionFromPlanFound(UR5ControllerState target_ur_controller_state)
+bool UR5ControllerSlave::checkTransitionFromPlanFound(UR5ControllerState::UR5ControllerSlaveState target_ur_controller_state)
 {
     switch(target_ur_controller_state)
     {
-        case UR5ControllerState::idle:
+        case UR5ControllerState::UR5ControllerSlaveState::idle:
         {
             return true;
             break;
         }
-        case UR5ControllerState::planning:
+        case UR5ControllerState::UR5ControllerSlaveState::planning:
         {
             return false;
             break;
         }
-        case UR5ControllerState::plan_found:
+        case UR5ControllerState::UR5ControllerSlaveState::plan_found:
         {
             return false;
             break;
         }
-        case UR5ControllerState::executing_plan:
+        case UR5ControllerState::UR5ControllerSlaveState::executing_plan:
         {
             return true;
             break;
@@ -251,26 +309,26 @@ bool UR5ControllerSlave::checkTransitionFromPlanFound(UR5ControllerState target_
     }
 }
 
-bool UR5ControllerSlave::checkTransitionFromExecutingPlan(UR5ControllerState target_ur_controller_state)
+bool UR5ControllerSlave::checkTransitionFromExecutingPlan(UR5ControllerState::UR5ControllerSlaveState target_ur_controller_state)
 {
     switch(target_ur_controller_state)
     {
-        case UR5ControllerState::idle:
+        case UR5ControllerState::UR5ControllerSlaveState::idle:
         {
             return true;
             break;
         }
-        case UR5ControllerState::planning:
+        case UR5ControllerState::UR5ControllerSlaveState::planning:
         {
             return false;
             break;
         }
-        case UR5ControllerState::plan_found:
+        case UR5ControllerState::UR5ControllerSlaveState::plan_found:
         {
             return false;
             break;
         }
-        case UR5ControllerState::executing_plan:
+        case UR5ControllerState::UR5ControllerSlaveState::executing_plan:
         {
             return false;
             break;
