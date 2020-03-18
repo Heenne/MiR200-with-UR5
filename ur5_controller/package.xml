@@ -53,6 +53,7 @@
   <depend>moveit_core</depend>
   <depend>moveit_ros_planning_interface</depend>
   <depend>geometry_msgs</depend>
+  <depend>mir_ur5_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

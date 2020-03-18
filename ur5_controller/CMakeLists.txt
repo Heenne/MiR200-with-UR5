@@ -11,7 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     moveit_core 
     moveit_ros_planning_interface
-    geometry_msgs)
+    geometry_msgs
+    mir_ur5_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -103,9 +104,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+    INCLUDE_DIRS include
 #  LIBRARIES ur5_controller
-#  CATKIN_DEPENDS other_catkin_pkg
+#  CATKIN_DEPENDS ur5_controller_msgs
 #  DEPENDS system_lib
 )
 
@@ -131,6 +132,11 @@ add_library(ur5_controller_slave
     src/ur5_controller_slave/ur5_controller_slave.cpp
 )
 
+add_library(ur5_controller_types
+    include/ur5_controller_types/ur5_controller_types.h
+    src/ur5_controller_types/ur5_controller_types.cpp
+)
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -151,12 +157,14 @@ add_executable(ur5_controller_slave_node src/ur5_controller_slave/ur5_controller
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ur5_controller_slave mir_ur5_msgs_generate_messages_cpp)
+add_dependencies(ur5_controller_master mir_ur5_msgs_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(ur5_controller_master_node 
-    ur5_controller_master ${catkin_LIBRARIES})
+    ur5_controller_master ur5_controller_types ${catkin_LIBRARIES})
 target_link_libraries(ur5_controller_slave_node 
-    ur5_controller_slave ${catkin_LIBRARIES})
+    ur5_controller_slave ur5_controller_types ${catkin_LIBRARIES})
 
 #############
 ## Install ##
