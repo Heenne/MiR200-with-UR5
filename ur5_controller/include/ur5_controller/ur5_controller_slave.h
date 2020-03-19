@@ -12,7 +12,9 @@
 #include <geometry_msgs/Pose.h>
 
 #include <ur5_controller_types/ur5_controller_types.h>
-#include <mir_ur5_msgs/RobotArmInstructionAction.h>
+// #include <mir_ur5_msgs/RobotArmInstructionAction.h>
+#include <mir_ur5_msgs/RobotArmPlanTrajectoryAction.h>
+
 
 class UR5ControllerSlave
 {
@@ -24,8 +26,12 @@ public:
     #pragma region Methods
     void execute(const ros::TimerEvent &timer_event_info);
 
-    bool planTrajectory();
-    bool planTrajectory(tf::Pose target_pose);
+    bool planPTPTrajectory();
+    bool planPTPTrajectory(tf::Pose target_pose);
+    bool planCartesianTrajectory();
+    bool planCartesianTrajectory(tf::Pose target_pose);
+    bool planTrajectory(UR5MovementTypeIds::UR5MovementTypeIds ur5_movement_type_id);
+    bool planTrajectory(UR5MovementTypeIds::UR5MovementTypeIds ur5_movement_type_id, tf::Pose target_pose);
     #pragma endregion
 
     #pragma region Getter/Setter
@@ -43,7 +49,9 @@ private:
     //ROS member
     ros::NodeHandle robot_node_handle_;
 
-    std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmInstructionAction>> robot_arm_instruction_as_;
+    // std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmInstructionAction>> robot_arm_instruction_as_;
+    std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmPlanTrajectoryAction>> robot_arm_plan_trajectory_as_;
+    // std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmExecuteTrajectoryAction>> robot_arm_execute_trajectory_as_;
 
     //MoveIt member
     std::string PLANNING_GROUP = "ur5_arm";
@@ -64,14 +72,22 @@ private:
 
     //General member
     std::shared_ptr<tf::Pose> target_pose_; //Target pose of the robot arm is saved here
-    std::shared_ptr<moveit_msgs::RobotTrajectory> planned_trajectory_; //Planned trajectory is saved here. Null if no trajectory is available or it was not planned.
+    std::shared_ptr<moveit::planning_interface::MoveGroupInterface::Plan> moveit_plan_; //Planned trajectory is saved here. Null if no trajectory is available or it was not planned.
+    UR5MovementTypeIds::UR5MovementTypeIds moveit_plan_movement_type_; //Type of the movement that was planned. PTP or cartesian
     #pragma endregion
 
     #pragma region Callbacks
-    void robotArmInstructionGoalCb();
-    void robotArmInstructionDoneCb(const actionlib::SimpleClientGoalState &state,
-                              const mir_ur5_msgs::RobotArmInstructionActionResultConstPtr &result);
-    void robotArmInstructionFeedbackCb(const mir_ur5_msgs::RobotArmInstructionFeedback::ConstPtr& feedback);
+    // These methods are for a client not a server!
+    // void robotArmInstructionGoalCb();
+    // void robotArmInstructionDoneCb(const actionlib::SimpleClientGoalState &state,
+    //                                 const mir_ur5_msgs::RobotArmInstructionActionResultConstPtr &result);
+    // void robotArmInstructionFeedbackCb(const mir_ur5_msgs::RobotArmInstructionFeedback::ConstPtr& feedback);
+
+    void robotArmPlanTrajectoryGoalCb();
+    void robotArmPlanTrajectoryPreemptCb();
+
+    void robotArmExecuteTrajectoryGoalCb();
+    void robotArmExecuteTrajectoryPreemptCb();
     #pragma endregion
 
 
@@ -82,7 +98,7 @@ private:
      * @return true Reading parameters succeeded
      * @return false Reading parameters failed
      */
-    bool readParameters();
+    bool loadParameters();
 
     /**
      * @brief Uses the tf::poseTFToMsg method but without the need to use a reference so this can be used in a function within a single line
@@ -98,7 +114,7 @@ private:
      * @param pose geometry_msgs::Pose object that should be converted to a tf::Pose object
      * @return Object of type tf::Pose converted from geometry_msgs::Pose 
      */
-    tf::Pose poseGeometrytoTFMsgs(geometry_msgs::Pose pose);
+    tf::Pose poseGeometryMsgstoTF(geometry_msgs::Pose pose);
 
     bool setControllerState(UR5ControllerState::UR5ControllerSlaveState target_ur5_controller_state);
     bool checkTransitionFromIdle(UR5ControllerState::UR5ControllerSlaveState target_ur_controller_state);

@@ -19,6 +19,26 @@ namespace UR5ControllerState
     };
 }
 
+namespace UR5MovementTypeIds
+{
+    enum UR5MovementTypeIds
+    {
+        none = 0,
+        PTP = 1,
+        Cartesian = 2
+    };
+}
+
+namespace UR5ControllerMasterStateMachine
+{
+    enum UR5ControllerMasterStateMachine
+    {
+        idle = 0,
+        slaves_plan_trajectory,
+        wait_for_planned_trajectory
+    };
+}
+
 /**
  * @brief This enum contains the ids that the task_id member of the "RobotArmInstructions.action" can be
  * 
