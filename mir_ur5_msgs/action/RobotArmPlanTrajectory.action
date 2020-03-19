@@ -1,0 +1,12 @@
+# Goal
+geometry_msgs/Pose target_pose # Target pose that the trajectory should be planned to
+int8 movement_type_id # This id is defined by an enumeration that specifies if the movement should be PTP or Cartesian
+---
+# Result
+bool succeeded # Boolean flag if the operation with a specified goal was completed
+int32 robot_id # Id that defines which robot sent the result
+int32 result_id # Result id that tells the sender what went wrong if something went wrong
+---
+#Feedback
+int32 progress_percentage # Progress percentage from 0 to 100
+int32 progress_id # id that describes the current status of the action
