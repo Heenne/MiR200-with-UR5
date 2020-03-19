@@ -3,8 +3,9 @@
     <arg name="index" default="0"/>
     
     <group ns="robot$(arg index)_ns">
-        <rosparam file="$(find ur5_controller)/config/ur5_controller_global_config.yaml" command="load" subst_value="true"/>
         <param name="index" value="$(arg index)"/>
+        <rosparam file="$(find ur5_controller)/config/ur5_controller_global_config.yaml" command="load" subst_value="true"/>
+        <rosparam file="$(find ur5_controller)/config/ur5_controller_slave_config.yaml" command="load" subst_value="true"/>
         <node pkg="ur5_controller" type="ur5_controller_slave_node" name="ur5_controller_slave_node" output="screen"/>
     </group>
 </launch>
