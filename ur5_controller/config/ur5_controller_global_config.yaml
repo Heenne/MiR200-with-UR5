@@ -1,4 +1,2 @@
 number_of_robots: 2
-robot_name: "robot$(arg index)"
-robot_namespace: "robot$(arg index)_ns"
-robot_tf_prefix: "robot$(arg index)_tf"
+general_robot_name: "robot" # Name of every robot starts with this string. So if this is edited, robot_name, robot_namespace and robot_tf_prefix must be edited aswell 

@@ -1,2 +1,6 @@
+robot_name: "robot$(arg index)"
+robot_namespace: "robot$(arg index)_ns"
+robot_tf_prefix: "robot$(arg index)_tf"
+
 planning_attempts_timeout_: 10
 planning_time: 1.0
