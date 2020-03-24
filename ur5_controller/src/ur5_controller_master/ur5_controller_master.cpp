@@ -10,7 +10,9 @@ UR5ControllerMaster::UR5ControllerMaster(ros::NodeHandle master_node_handle)
     {
         std::string specific_robot_name = this->general_robot_name_;
         specific_robot_name.append(std::to_string(counter));
-        ros::NodeHandle robot_node_handle(specific_robot_name.append("_ns"));
+        std::string specific_robot_namespace = specific_robot_name.append("_ns");
+        std::string root_namespace = "/";
+        ros::NodeHandle robot_node_handle(root_namespace.append(specific_robot_namespace));
         this->ur5_controller_slave_list_.push_back(robot_node_handle);
         this->ur5_controller_slave_confirmation_list_.insert(std::pair<std::string, bool>(specific_robot_name, false));
         std::shared_ptr<actionlib::SimpleActionClient<mir_ur5_msgs::RobotArmPlanTrajectoryAction>> temp_ac = std::shared_ptr<actionlib::SimpleActionClient<mir_ur5_msgs::RobotArmPlanTrajectoryAction>>(
