@@ -9,4 +9,3 @@ do
     sleep 1
 done
 echo "Finished spawning ur5 controller"
-$SHELL

@@ -9,12 +9,12 @@ sleep 3
 terminator -e "roslaunch control_ur5_test spawn_separated_block.launch"&
 ./spawn_robots.sh
 
-sleep 5
+sleep 10
 
 #Start the ur5 controller slaves
-./launch_ur5_controller_slaves.sh 2
+./launch_ur5_controller_slaves.sh 2&
 
-sleep 5
+sleep 10
 
 terminator -e "roslaunch ur5_controller robot_ur5_master.launch"&
 
