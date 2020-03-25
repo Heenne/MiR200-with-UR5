@@ -204,6 +204,12 @@ int main(int argc, char* argv[])
     target_pose1.position.z = 0.15;
 
     moveit_msgs::RobotTrajectory trajectory;
+
+    // Now, we call the planner to compute the plan and visualize it.
+    // Note that we are just planning, not asking move_group
+    // to actually move the robot.
+    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+
     while(ros::ok())
     {
         switch(states)
@@ -218,10 +224,7 @@ int main(int argc, char* argv[])
                 move_group.setStartStateToCurrentState();
                 move_group.setPoseTarget(target_pose1);
 
-                // Now, we call the planner to compute the plan and visualize it.
-                // Note that we are just planning, not asking move_group
-                // to actually move the robot.
-                moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+                
 
                 // Planning with constraints can be slow because every sample must call an inverse kinematics solver.
                 // Lets increase the planning time from the default 5 seconds to be sure the planner has enough time to succeed.
@@ -259,7 +262,8 @@ int main(int argc, char* argv[])
                 // and report success on execution of a trajectory.
 
                 /* Uncomment below line when working with a real robot */
-                moveit_msgs::MoveItErrorCodes error_code = move_group.move();
+                // moveit_msgs::MoveItErrorCodes error_code = move_group.move();
+                moveit_msgs::MoveItErrorCodes error_code = move_group.execute(my_plan);
                 ROS_INFO("error_code: %i", error_code.val);
                 if(error_code.val == -1)
                 {

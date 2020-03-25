@@ -33,9 +33,14 @@ UR5ControllerSlave::UR5ControllerSlave(ros::NodeHandle robot_node_handle)
     this->robot_arm_plan_trajectory_as_->registerGoalCallback(boost::bind(&UR5ControllerSlave::robotArmPlanTrajectoryGoalCb, this));
     this->robot_arm_plan_trajectory_as_->registerPreemptCallback(boost::bind(&UR5ControllerSlave::robotArmPlanTrajectoryPreemptCb, this));
 
+    this->robot_arm_execute_trajectory_as_ = std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmExecuteTrajectoryAction>>(
+                                                new actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmExecuteTrajectoryAction>(this->robot_node_handle_, "UR5ControllerExecuteTrajectory", false));
+    this->robot_arm_execute_trajectory_as_->registerGoalCallback(boost::bind(&UR5ControllerSlave::robotArmExecuteTrajectoryGoalCb, this));
+    this->robot_arm_execute_trajectory_as_->registerPreemptCallback(boost::bind(&UR5ControllerSlave::robotArmExecuteTrajectoryPreemptCb, this));
 
     //Start all action server
     this->robot_arm_plan_trajectory_as_->start();
+    this->robot_arm_execute_trajectory_as_->start();
 }
 
 void UR5ControllerSlave::execute(const ros::TimerEvent &timer_event_info)
@@ -204,6 +209,20 @@ bool UR5ControllerSlave::planTrajectory(UR5MovementTypeIds::UR5MovementTypeIds u
     return this->planTrajectory(ur5_movement_type_id);
 }
 
+bool UR5ControllerSlave::executeTrajectory()
+{
+    moveit_msgs::MoveItErrorCodes error_code = this->move_group_->execute(*this->moveit_plan_);
+    if(error_code.val == moveit_msgs::MoveItErrorCodes::SUCCESS)
+    {
+        return true;
+    }
+    else
+    {
+        //Do something
+        return false;
+    }
+}
+
 
 #pragma region Getter/Setter
 tf::Pose UR5ControllerSlave::getTargetPose()
@@ -245,7 +264,11 @@ void UR5ControllerSlave::robotArmPlanTrajectoryGoalCb()
     
     if(this->planTrajectory(UR5MovementTypeIds::UR5MovementTypeIds(goal_information->movement_type_id)))
     {
-        this->robot_arm_plan_trajectory_as_->setSucceeded();
+        mir_ur5_msgs::RobotArmPlanTrajectoryResult result;
+        result.succeeded = true;
+        result.robot_id = this->robot_index_;
+        result.result_id = 0;
+        this->robot_arm_plan_trajectory_as_->setSucceeded(result);
     }
     else
     {
@@ -259,12 +282,26 @@ void UR5ControllerSlave::robotArmPlanTrajectoryPreemptCb()
 }
 
 
-void robotArmExecuteTrajectoryGoalCb()
+void UR5ControllerSlave::robotArmExecuteTrajectoryGoalCb()
 {
+    bool planning_result = false;
 
+    ROS_INFO_STREAM(this->robot_name_ << " received trajectory execution goal.");
+
+    mir_ur5_msgs::RobotArmExecuteTrajectoryGoalConstPtr goal_information = this->robot_arm_execute_trajectory_as_->acceptNewGoal();
+    
+    ROS_INFO_STREAM("Executing robot trajectory");
+    if(this->executeTrajectory())
+    {
+        this->robot_arm_plan_trajectory_as_->setSucceeded();
+    }
+    else
+    {
+        // this->robot_arm_plan_trajectory_as_->setAborted();
+    }
 }
 
-void robotArmExecuteTrajectoryPreemptCb()
+void UR5ControllerSlave::robotArmExecuteTrajectoryPreemptCb()
 {
 
 }
@@ -277,8 +314,9 @@ bool UR5ControllerSlave::loadParameters()
     this->robot_node_handle_.param<std::string>("robot_name", this->robot_name_, "");
     this->robot_node_handle_.param<std::string>("robot_namespace", this->robot_namespace_, "");
     this->robot_node_handle_.param<std::string>("robot_tf_prefix", this->robot_tf_prefix_, "");
-    this->robot_node_handle_.param<int>("planning_attempts_timeout_", this->planning_attempts_timeout_, 10);
+    this->robot_node_handle_.param<int>("planning_attempts_timeout", this->planning_attempts_timeout_, 10);
     this->robot_node_handle_.param<double>("planning_time", this->planning_time_, 1.0);
+    this->robot_node_handle_.param<int>("execution_attempts_timeout", this->execution_attempts_timeout_, 10);
 }
 
 geometry_msgs::Pose UR5ControllerSlave::poseTFtoGeometryMsgs(tf::Pose pose)

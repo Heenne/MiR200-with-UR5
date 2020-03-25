@@ -14,6 +14,7 @@
 #include <ur5_controller_types/ur5_controller_types.h>
 // #include <mir_ur5_msgs/RobotArmInstructionAction.h>
 #include <mir_ur5_msgs/RobotArmPlanTrajectoryAction.h>
+#include <mir_ur5_msgs/RobotArmExecuteTrajectoryAction.h>
 
 
 class UR5ControllerSlave
@@ -32,6 +33,8 @@ public:
     bool planCartesianTrajectory(tf::Pose target_pose);
     bool planTrajectory(UR5MovementTypeIds::UR5MovementTypeIds ur5_movement_type_id);
     bool planTrajectory(UR5MovementTypeIds::UR5MovementTypeIds ur5_movement_type_id, tf::Pose target_pose);
+
+    bool executeTrajectory();
     #pragma endregion
 
     #pragma region Getter/Setter
@@ -51,7 +54,7 @@ private:
 
     // std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmInstructionAction>> robot_arm_instruction_as_;
     std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmPlanTrajectoryAction>> robot_arm_plan_trajectory_as_;
-    // std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmExecuteTrajectoryAction>> robot_arm_execute_trajectory_as_;
+    std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmExecuteTrajectoryAction>> robot_arm_execute_trajectory_as_;
 
     //MoveIt member
     std::string PLANNING_GROUP = "ur5_arm";
@@ -69,6 +72,7 @@ private:
 
     int planning_attempts_timeout_; //Number of tries to find a plan for a trajectory before reporting error
     double planning_time_; //Time for getting a plan to the target position
+    int execution_attempts_timeout_; //Number of tried to execute the existing motion plan before reporting error
 
     //General member
     std::shared_ptr<tf::Pose> target_pose_; //Target pose of the robot arm is saved here
@@ -77,12 +81,6 @@ private:
     #pragma endregion
 
     #pragma region Callbacks
-    // These methods are for a client not a server!
-    // void robotArmInstructionGoalCb();
-    // void robotArmInstructionDoneCb(const actionlib::SimpleClientGoalState &state,
-    //                                 const mir_ur5_msgs::RobotArmInstructionActionResultConstPtr &result);
-    // void robotArmInstructionFeedbackCb(const mir_ur5_msgs::RobotArmInstructionFeedback::ConstPtr& feedback);
-
     void robotArmPlanTrajectoryGoalCb();
     void robotArmPlanTrajectoryPreemptCb();
 

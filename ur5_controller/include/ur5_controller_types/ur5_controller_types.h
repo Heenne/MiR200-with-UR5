@@ -35,7 +35,9 @@ namespace UR5ControllerMasterStateMachine
     {
         idle = 0,
         slaves_plan_trajectory,
-        wait_for_planned_trajectory
+        wait_for_planned_trajectory,
+        execute_trajectory,
+        wait_for_executed_trajectory
     };
 }
 

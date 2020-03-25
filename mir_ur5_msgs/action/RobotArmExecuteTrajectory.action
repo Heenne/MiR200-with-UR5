@@ -1,0 +1,11 @@
+# Goal
+
+---
+# Result
+bool succeeded # Boolean flag if the operation with a specified goal was completed
+int32 robot_id # Id that defines which robot sent the result
+int32 result_id # Result id that tells the sender what went wrong if something went wrong
+---
+#Feedback
+int32 progress_percentage # Progress percentage from 0 to 100
+int32 progress_id # id that describes the current status of the action

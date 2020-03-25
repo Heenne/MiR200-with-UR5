@@ -4,3 +4,4 @@ robot_tf_prefix: "robot$(arg index)_tf"
 
 planning_attempts_timeout_: 10
 planning_time: 1.0
+execution_attempts_timeout_: 10
