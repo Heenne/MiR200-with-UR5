@@ -12,16 +12,15 @@
 #include <geometry_msgs/Pose.h>
 
 #include <ur5_controller_types/ur5_controller_types.h>
-// #include <mir_ur5_msgs/RobotArmInstructionAction.h>
-#include <mir_ur5_msgs/RobotArmPlanTrajectoryAction.h>
-#include <mir_ur5_msgs/RobotArmExecuteTrajectoryAction.h>
+#include <mir_ur5_msgs/PlanTrajectoryAction.h>
+#include <mir_ur5_msgs/ExecuteTrajectoryAction.h>
 
 
-class UR5ControllerSlave
+class UR5Controller
 {
 public:
     #pragma region De-/Constructor
-    UR5ControllerSlave(ros::NodeHandle robot_node_handle);
+    UR5Controller(ros::NodeHandle robot_node_handle);
     #pragma endregion
 
     #pragma region Methods
@@ -31,8 +30,8 @@ public:
     bool planPTPTrajectory(tf::Pose target_pose);
     bool planCartesianTrajectory();
     bool planCartesianTrajectory(tf::Pose target_pose);
-    bool planTrajectory(UR5MovementTypeIds::UR5MovementTypeIds ur5_movement_type_id);
-    bool planTrajectory(UR5MovementTypeIds::UR5MovementTypeIds ur5_movement_type_id, tf::Pose target_pose);
+    bool planTrajectory(MovementTypeIds ur5_movement_type_id);
+    bool planTrajectory(MovementTypeIds ur5_movement_type_id, tf::Pose target_pose);
 
     bool executeTrajectory();
     #pragma endregion
@@ -48,13 +47,18 @@ public:
     #pragma endregion
     
 private:
+    enum class StateMachineStates
+    {
+        idle = 0
+    };
+
     #pragma region Member
     //ROS member
     ros::NodeHandle robot_node_handle_;
 
     // std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmInstructionAction>> robot_arm_instruction_as_;
-    std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmPlanTrajectoryAction>> robot_arm_plan_trajectory_as_;
-    std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::RobotArmExecuteTrajectoryAction>> robot_arm_execute_trajectory_as_;
+    std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::PlanTrajectoryAction>> plan_trajectory_as_;
+    std::shared_ptr<actionlib::SimpleActionServer<mir_ur5_msgs::ExecuteTrajectoryAction>> execute_trajectory_as_;
 
     //MoveIt member
     std::string PLANNING_GROUP = "ur5_arm";
@@ -68,7 +72,7 @@ private:
     std::string robot_namespace_;
     std::string robot_tf_prefix_;
 
-    UR5ControllerState::UR5ControllerSlaveState ur5_controller_state_;
+    UR5ControllerStates ur5_controller_state_;
 
     int planning_attempts_timeout_; //Number of tries to find a plan for a trajectory before reporting error
     double planning_time_; //Time for getting a plan to the target position
@@ -77,15 +81,16 @@ private:
     //General member
     std::shared_ptr<tf::Pose> target_pose_; //Target pose of the robot arm is saved here
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface::Plan> moveit_plan_; //Planned trajectory is saved here. Null if no trajectory is available or it was not planned.
-    UR5MovementTypeIds::UR5MovementTypeIds moveit_plan_movement_type_; //Type of the movement that was planned. PTP or cartesian
+    
+    MovementTypeIds moveit_plan_movement_type_; //Type of the movement that was planned. PTP or cartesian
     #pragma endregion
 
     #pragma region Callbacks
-    void robotArmPlanTrajectoryGoalCb();
-    void robotArmPlanTrajectoryPreemptCb();
+    void planTrajectoryGoalCb();
+    void planTrajectoryPreemptCb();
 
-    void robotArmExecuteTrajectoryGoalCb();
-    void robotArmExecuteTrajectoryPreemptCb();
+    void executeTrajectoryGoalCb();
+    void executeTrajectoryPreemptCb();
     #pragma endregion
 
 
@@ -114,10 +119,10 @@ private:
      */
     tf::Pose poseGeometryMsgstoTF(geometry_msgs::Pose pose);
 
-    bool setControllerState(UR5ControllerState::UR5ControllerSlaveState target_ur5_controller_state);
-    bool checkTransitionFromIdle(UR5ControllerState::UR5ControllerSlaveState target_ur_controller_state);
-    bool checkTransitionFromPlanning(UR5ControllerState::UR5ControllerSlaveState target_ur_controller_state);
-    bool checkTransitionFromPlanFound(UR5ControllerState::UR5ControllerSlaveState target_ur_controller_state);
-    bool checkTransitionFromExecutingPlan(UR5ControllerState::UR5ControllerSlaveState target_ur_controller_state);
+    bool setControllerState(UR5ControllerStates target_ur5_controller_state);
+    bool checkTransitionFromIdle(UR5ControllerStates target_ur_controller_state);
+    bool checkTransitionFromPlanning(UR5ControllerStates target_ur_controller_state);
+    bool checkTransitionFromPlanFound(UR5ControllerStates target_ur_controller_state);
+    bool checkTransitionFromExecutingPlan(UR5ControllerStates target_ur_controller_state);
     #pragma endregion
 };

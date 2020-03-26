@@ -122,14 +122,14 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(ur5_controller_master
-    include/ur5_controller/ur5_controller_master.h
-    src/ur5_controller_master/ur5_controller_master.cpp
+add_library(ur5_controller_manager
+    include/ur5_controller_manager/ur5_controller_manager.h
+    src/ur5_controller_manager/ur5_controller_manager.cpp
 )
 
-add_library(ur5_controller_slave
-    include/ur5_controller/ur5_controller_slave.h
-    src/ur5_controller_slave/ur5_controller_slave.cpp
+add_library(ur5_controller
+    include/ur5_controller/ur5_controller.h
+    src/ur5_controller/ur5_controller.cpp
 )
 
 add_library(ur5_controller_types
@@ -145,8 +145,8 @@ add_library(ur5_controller_types
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(ur5_controller_master_node src/ur5_controller_master/ur5_controller_master_node.cpp)
-add_executable(ur5_controller_slave_node src/ur5_controller_slave/ur5_controller_slave_node.cpp)
+add_executable(ur5_controller_manager_node src/ur5_controller_manager/ur5_controller_manager_node.cpp)
+add_executable(ur5_controller_node src/ur5_controller/ur5_controller_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -157,14 +157,14 @@ add_executable(ur5_controller_slave_node src/ur5_controller_slave/ur5_controller
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(ur5_controller_slave mir_ur5_msgs_generate_messages_cpp)
-add_dependencies(ur5_controller_master mir_ur5_msgs_generate_messages_cpp)
+add_dependencies(ur5_controller mir_ur5_msgs_generate_messages_cpp)
+add_dependencies(ur5_controller_manager mir_ur5_msgs_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ur5_controller_master_node 
-    ur5_controller_master ur5_controller_types ${catkin_LIBRARIES})
-target_link_libraries(ur5_controller_slave_node 
-    ur5_controller_slave ur5_controller_types ${catkin_LIBRARIES})
+target_link_libraries(ur5_controller_manager_node 
+    ur5_controller_manager ur5_controller_types ${catkin_LIBRARIES})
+target_link_libraries(ur5_controller_node 
+    ur5_controller ur5_controller_types ${catkin_LIBRARIES})
 
 #############
 ## Install ##
