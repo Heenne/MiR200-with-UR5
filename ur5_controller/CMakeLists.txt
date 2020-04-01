@@ -127,6 +127,11 @@ add_library(ur5_controller_manager
     src/ur5_controller_manager/ur5_controller_manager.cpp
 )
 
+add_library(ur5_controller_info
+    include/ur5_controller_manager/ur5_controller_info.h
+    src/ur5_controller_manager/ur5_controller_info.cpp
+)
+
 add_library(ur5_controller
     include/ur5_controller/ur5_controller.h
     src/ur5_controller/ur5_controller.cpp
@@ -140,7 +145,9 @@ add_library(ur5_controller_types
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ur5_controller mir_ur5_msgs_generate_messages_cpp)
+add_dependencies(ur5_controller_info mir_ur5_msgs_generate_messages_cpp)
+add_dependencies(ur5_controller_manager mir_ur5_msgs_generate_messages_cpp ur5_controller_info)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -157,14 +164,11 @@ add_executable(ur5_controller_node src/ur5_controller/ur5_controller_node.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(ur5_controller mir_ur5_msgs_generate_messages_cpp)
-add_dependencies(ur5_controller_manager mir_ur5_msgs_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(ur5_controller_manager_node 
-    ur5_controller_manager ur5_controller_types ${catkin_LIBRARIES})
-target_link_libraries(ur5_controller_node 
-    ur5_controller ur5_controller_types ${catkin_LIBRARIES})
+target_link_libraries(ur5_controller_manager ur5_controller_info ${catkin_LIBRARIES})
+target_link_libraries(ur5_controller_manager_node ur5_controller_manager ${catkin_LIBRARIES})
+target_link_libraries(ur5_controller_node ur5_controller ${catkin_LIBRARIES})
 
 #############
 ## Install ##

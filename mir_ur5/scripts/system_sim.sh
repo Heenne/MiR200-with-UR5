@@ -12,11 +12,10 @@ terminator -e "roslaunch control_ur5_test spawn_separated_block.launch"&
 sleep 10
 
 #Start the ur5 controller slaves
-./launch_ur5_controller_slaves.sh 2&
+./launch_ur5_controller.sh 2&
 
-sleep 10
-
-terminator -e "roslaunch ur5_controller robot_ur5_master.launch"&
+# sleep 10
+# terminator -e "roslaunch ur5_controller ur5_controller_manager.launch"&
 
 echo "Finished setting up sim environment."
 $SHELL

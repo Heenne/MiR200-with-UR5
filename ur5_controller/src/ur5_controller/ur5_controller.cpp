@@ -269,6 +269,7 @@ void UR5Controller::planTrajectoryGoalCb()
         result.succeeded = true;
         result.robot_id = this->robot_index_;
         result.result_id = 0;
+        ROS_INFO_STREAM("Set succeeded");
         this->plan_trajectory_as_->setSucceeded(result);
     }
     else
@@ -318,6 +319,8 @@ bool UR5Controller::loadParameters()
     this->robot_node_handle_.param<int>("planning_attempts_timeout", this->planning_attempts_timeout_, 10);
     this->robot_node_handle_.param<double>("planning_time", this->planning_time_, 1.0);
     this->robot_node_handle_.param<int>("execution_attempts_timeout", this->execution_attempts_timeout_, 10);
+    this->robot_node_handle_.param<std::string>("plan_trajectory_action_name", this->plan_trajectory_action_name_, "PlanTrajectoryActionNameNotFound");
+    this->robot_node_handle_.param<std::string>("execute_trajectory_action_name", this->execute_trajectory_action_name_, "ExecuteTrajectoryActionNameNotFound");
 }
 
 geometry_msgs::Pose UR5Controller::poseTFtoGeometryMsgs(tf::Pose pose)

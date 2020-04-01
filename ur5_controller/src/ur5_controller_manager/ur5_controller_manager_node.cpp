@@ -6,11 +6,11 @@
 int main(int argc, char* argv[])
 {
     ros::init(argc,argv,"ur5_controller_manager");
-    ros::NodeHandle master_controller_nh;
+    ros::NodeHandle ur5_controller_manager_nh;
 
-    UR5ControllerManager ur5_controller_master = UR5ControllerManager(master_controller_nh);
+    UR5ControllerManager ur5_controller_manager = UR5ControllerManager(ur5_controller_manager_nh);
 
-    ros::Timer execute_timer = master_controller_nh.createTimer(ros::Duration(0.01), &UR5ControllerManager::execute, &ur5_controller_master);
+    ros::Timer execute_timer = ur5_controller_manager_nh.createTimer(ros::Duration(0.01), &UR5ControllerManager::execute, &ur5_controller_manager);
     
     ROS_INFO_STREAM("UR5ControllerManager is active and spinning.");
     

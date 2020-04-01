@@ -78,6 +78,9 @@ private:
     double planning_time_; //Time for getting a plan to the target position
     int execution_attempts_timeout_; //Number of tried to execute the existing motion plan before reporting error
 
+    std::string plan_trajectory_action_name_;
+    std::string execute_trajectory_action_name_;
+
     //General member
     std::shared_ptr<tf::Pose> target_pose_; //Target pose of the robot arm is saved here
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface::Plan> moveit_plan_; //Planned trajectory is saved here. Null if no trajectory is available or it was not planned.

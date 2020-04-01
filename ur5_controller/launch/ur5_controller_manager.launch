@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+    <group ns="ur5_controller_manager">
+        <rosparam file="$(find ur5_controller)/config/ur5_controller_global_config.yaml" command="load" subst_value="true"/>
+        <rosparam file="$(find ur5_controller)/config/ur5_controller_manager_config.yaml" command="load" subst_value="true"/>
+        <node pkg="ur5_controller" type="ur5_controller_manager_node" name="ur5_controller_manager_node" output="screen"/>
+    </group>
+</launch>
