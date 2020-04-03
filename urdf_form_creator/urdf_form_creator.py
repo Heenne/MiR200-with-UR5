@@ -1,4 +1,5 @@
 import sys
+import os
 from tkinter import Tk, StringVar
 from tkinter import Grid, Label, OptionMenu, Entry, Button
 
@@ -100,7 +101,10 @@ def on_click_create_urdf():
     etree.SubElement(gazebo_element, "kd", value="1.0")
     
     tree = etree.ElementTree(robot)
-    tree.write("urdf/basic_geometry.urdf", encoding="utf-8", xml_declaration=True, pretty_print=True)
+
+    script_dir: str = os.path.dirname(__file__)
+    urdf_file_path: str = os.path.join(script_dir, "urdf/basic_geometry.urdf")
+    tree.write(urdf_file_path, encoding="utf-8", xml_declaration=True, pretty_print=True)
 
 
 def create_gui():
