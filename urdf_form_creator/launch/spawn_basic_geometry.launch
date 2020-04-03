@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <param name="geometry_description" 
+        command="$(find xacro)/xacro --inorder $(find urdf_form_creator)/urdf/basic_geometry.urdf" />
+
+    <!--Spawn the MiR plattform into Gazebo-->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
+        args="-urdf -param geometry_description -model block -x 0.0 -y 0.0 -Y 0.0 -z 0.05" 
+        respawn="false" output="screen"/>          
+</launch>
