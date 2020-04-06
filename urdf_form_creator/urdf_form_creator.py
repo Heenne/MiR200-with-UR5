@@ -81,7 +81,7 @@ def on_click_create_urdf():
     elif selected_geometry_option.get() == "Cylinder":
         etree.SubElement(geometry_element, "cylinder", radius=str(value_1), length=str(0.1))
     elif selected_geometry_option.get() == "Isosceles Triangle":
-        etree.SubElement(geometry_element, "mesh", filename="package://urdf_form_creator/meshes/Isosceles_Triangle.stl", scale=str(value_1 * 0.001) + " " + str(value_2 * 0.001) + " 0.001")
+        etree.SubElement(geometry_element, "mesh", filename="package://urdf_form_creator/meshes/Isosceles_Triangle.stl", scale=str(value_1 * 0.001) + " " + str(value_1 * 0.001) + " 0.001")
     elif selected_geometry_option.get() == "Right Angled Triangle":
         etree.SubElement(geometry_element, "mesh", filename="package://urdf_form_creator/meshes/Right_Angled_Triangle.stl", scale=str(value_1 * 0.001) + " " + str(value_2 * 0.001) + " 0.001")
     etree.SubElement(visual_element, "material", name="white")
@@ -93,7 +93,7 @@ def on_click_create_urdf():
     elif selected_geometry_option.get() == "Cylinder":
         etree.SubElement(geometry_element, "cylinder", radius=str(value_1), length=str(0.1))
     elif selected_geometry_option.get() == "Isosceles Triangle":
-        etree.SubElement(geometry_element, "mesh", filename="package://urdf_form_creator/meshes/Isosceles_Triangle.stl", scale=str(value_1 * 0.001) + " " + str(value_2 * 0.001) + " 0.001")
+        etree.SubElement(geometry_element, "mesh", filename="package://urdf_form_creator/meshes/Isosceles_Triangle.stl", scale=str(value_1 * 0.001) + " " + str(value_1 * 0.001) + " 0.001")
     elif selected_geometry_option.get() == "Right Angled Triangle":
         etree.SubElement(geometry_element, "mesh", filename="package://urdf_form_creator/meshes/Right_Angled_Triangle.stl", scale=str(value_1 * 0.001) + " " + str(value_2 * 0.001) + " 0.001")
 
