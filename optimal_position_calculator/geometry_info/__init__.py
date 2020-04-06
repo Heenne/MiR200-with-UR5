@@ -8,23 +8,15 @@ from math import sqrt, pow
 import numpy as np
 
 class EdgeInfo:
-    __start_point: np.array
-    __edge_vector: np.array
+    start_point: np.array
+    edge_vector: np.array
 
     def __init__(self, start_point: np.array, end_point: np.array):
-        self.__start_point = start_point
-        self.__edge_vector = end_point - start_point
-
-    
-    def get_start_point(self):
-        return self.__start_point
-
-    
-    def get_edge_vector(self):
-        return self.__edge_vector
+        self.start_point = start_point
+        self.edge_vector = end_point - start_point
 
     def __str__(self):
-        return "Start point: " + str(self.__start_point) + " | Edge vector: " + str(self.__edge_vector)
+        return "Start point: " + str(self.start_point) + " | Edge vector: " + str(self.edge_vector)
 
 
 class GeometryContour(ABC):
@@ -76,6 +68,23 @@ class GeometryContour(ABC):
 
         plot.show(block=block)
 
+    def plot_edges(self, **kwargs):
+        block: bool = False
+        if 'block' in kwargs:
+            block = kwargs.get("block")
+
+        for edge in self._edge_list:
+            x_start: float = edge.start_point[0]
+            y_start: float = edge.start_point[1]
+            end_point: np.array = edge.start_point + edge.edge_vector
+            x_end: float = end_point[0]
+            y_end: float = end_point[1]
+            plot.plot([x_start, x_end], [y_start, y_end], 'r-')
+            pass
+
+        plot.show(block=block)
+
+
 
 class Box(GeometryContour):
     _x_length: float
@@ -126,20 +135,29 @@ class Cylinder(GeometryContour):
 
 class IsoscelesTriangle(GeometryContour):
     __DEFAULT_SIDE_LENGTH: float = 1.0
+    __GAZEBO_FACTOR: float = 1000 #This factor is necessary as Gazebo puts a 1000 factor in between. So in the urdf file is a necessary 0.001 factor to show to right dimensions of the model in Gazebo
     _scaled_side_length: float
-
+    _scale_factor: float
 
     def __init__(self):
         super().__init__()
 
 
     def import_contour(self, **kwargs):
-        x_scale: float = float(kwargs.get("scale"))
+        self._scale_factor: float = float(kwargs.get("scale")) * self.__GAZEBO_FACTOR
         
-        #First calculate with the default triangle mesh with 1m edge length
-        height: float = self._calculate_default_height()
+        self._scaled_side_length: float = self.__DEFAULT_SIDE_LENGTH * self._scale_factor
+        scaled_height: float = self._calculate_height(self._scaled_side_length)
 
-        self._scaled_side_length: float = self.__DEFAULT_SIDE_LENGTH * x_scale
+        point1: np.array = np.array([(self._scaled_side_length / 2), (-scaled_height / 3)])
+        point2: np.array = np.array([0, ((2*scaled_height) / 3)])
+        point3: np.array = np.array([(-self._scaled_side_length / 2), (-scaled_height / 3)])
+
+        self._corner_point_list.append(point1)
+        self._corner_point_list.append(point2)
+        self._corner_point_list.append(point3)
+
+        self.create_contour_edges()
 
     def _calculate_default_height(self) -> float:
         return self._calculate_height(self.__DEFAULT_SIDE_LENGTH)
@@ -149,8 +167,30 @@ class IsoscelesTriangle(GeometryContour):
 
 
 class RightAngledTriangle(GeometryContour):
+    __GAZEBO_FACTOR: float = 1000 #This factor is necessary as Gazebo puts a 1000 factor in between. So in the urdf file is a necessary 0.001 factor to show to right dimensions of the model in Gazebo
+    _DEFAULT_X_SIDE_LENGTH: float = 1.0
+    _DEFAULT_Y_SIDE_LENGTH: float = 1.0
+    _x_scale_factor: float
+    _y_scale_factor: float
+    _scaled_x_side_length: float
+    _scaled_y_side_length: float
+
     def __init__(self):
         super().__init__()
 
     def import_contour(self, **kwargs):
-        pass
+        self._x_scale_factor: float = float(kwargs.get("x_scale")) * self.__GAZEBO_FACTOR
+        self._y_scale_factor: float = float(kwargs.get("y_scale")) * self.__GAZEBO_FACTOR
+
+        self._scaled_x_side_length = self._DEFAULT_X_SIDE_LENGTH * self._x_scale_factor
+        self._scaled_y_side_length = self._DEFAULT_Y_SIDE_LENGTH * self._y_scale_factor
+
+        point1: np.array = np.array([((2*self._scaled_x_side_length) / 3), (-self._scaled_y_side_length / 3)])
+        point2: np.array = np.array([(-self._scaled_x_side_length / 3), ((2*self._scaled_y_side_length) / 3)])
+        point3: np.array = np.array([(-self._scaled_x_side_length / 3), (-self._scaled_y_side_length / 3)])
+
+        self._corner_point_list.append(point1)
+        self._corner_point_list.append(point2)
+        self._corner_point_list.append(point3)
+
+        self.create_contour_edges()
