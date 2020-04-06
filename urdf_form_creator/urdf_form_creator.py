@@ -40,7 +40,17 @@ def callback(root: Tk, selected_geometry_option: str, *args):
         changable_entry_2.grid_forget()
         temp: Label = Label(root, text="", width=40)
         temp.grid(row=2, column=1)
-    else:
+    elif selected_geometry_option == 'Isosceles Triangle':
+        changable_label_1 = Label(root, text="Scale: ", borderwidth=10)
+        changable_label_2 = Label(root, text="        ", borderwidth=10) #Empty line
+
+        changable_label_1.grid(row= 1, column= 0)
+        changable_label_2.grid(row= 2, column= 0)
+
+        changable_entry_2.grid_forget()
+        temp: Label = Label(root, text="", width=40)
+        temp.grid(row=2, column=1)
+    elif selected_geometry_option == 'Right Angled Triangle':
         changable_label_1 = Label(root, text="Scale X: ", borderwidth=10)
         changable_label_2 = Label(root, text="Scale Y: ", borderwidth=10)
 
