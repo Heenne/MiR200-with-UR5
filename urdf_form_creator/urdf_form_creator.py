@@ -66,7 +66,7 @@ def on_click_create_urdf():
 
     value_1: float= float(changable_entry_1.get())
     value_2: float
-    if selected_geometry_option.get() != "Cylinder":
+    if selected_geometry_option.get() != "Cylinder" and selected_geometry_option.get() != "Isosceles Triangle":
         value_2= float(changable_entry_2.get())
 
     root_link_name:str = "object_link"
