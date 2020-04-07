@@ -44,6 +44,6 @@ if __name__ == '__main__':
     object_contour.plot_corners(block=False)
     object_contour.plot_edges(block=False)
     object_contour.plot_centroid(block=False)
-    object_contour.plot_orthogonal_vector_controid_to_edge(block = False)
+    object_contour.plot_orthogonal_vector_centroid_to_edge(block = False)
 
     plot.show() #Let this be the last command so the plots wont be closed instantly

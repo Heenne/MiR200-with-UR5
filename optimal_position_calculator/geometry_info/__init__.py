@@ -154,7 +154,7 @@ class GeometryContour(ABC):
 
         plot.show(block=block)
 
-    def plot_orthogonal_vector_controid_to_edge(self, **kwargs):
+    def plot_orthogonal_vector_centroid_to_edge(self, **kwargs):
         block: bool = self.check_if_block_exists(**kwargs)
         centroid = self.calculate_centroid()
         for edge in self._edge_list:
