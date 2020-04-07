@@ -50,8 +50,75 @@ class GeometryContour(ABC):
             self._edge_list.append(edge)
 
 
+    def calculate_area(self) -> float:
+        #For formula see: https://en.wikipedia.org/wiki/Centroid under "Of a polygon"
+        area: float = 0.0
+        for counter in range(0, len(self._corner_point_list)):
+            if (counter+1) == len(self._corner_point_list):
+                part_area: float = ((self._corner_point_list[counter][0]*self._corner_point_list[0][1]) - (self._corner_point_list[0][0]*self._corner_point_list[counter][1]))    
+                area = area + part_area
+            else:
+                part_area: float = ((self._corner_point_list[counter][0]*self._corner_point_list[counter+1][1]) - (self._corner_point_list[counter+1][0]*self._corner_point_list[counter][1]))    
+                area = area + part_area
+        
+        area = 0.5 * area
+        return area
+
+
+    def calculate_centroid(self) -> np.array:
+        #For formula see: https://en.wikipedia.org/wiki/Centroid under "Of a polygon"
+        geometry_area: float = self.calculate_area()
+
+        x_centroid: float = 0.0
+        y_centroid: float = 0.0
+
+        x_first_factor: float = 0.0
+        y_first_factor: float = 0.0
+        second_factor: float = 0.0
+
+        for counter in range(0, len(self._corner_point_list)):
+            if (counter+1) == len(self._corner_point_list):
+                second_factor = ((self._corner_point_list[counter][0] * self._corner_point_list[0][1]) - (self._corner_point_list[0][0] * self._corner_point_list[counter][1]))
+                x_first_factor = self._corner_point_list[counter][0] + self._corner_point_list[0][0]
+                y_first_factor = self._corner_point_list[counter][1] + self._corner_point_list[0][1]
+
+            else:
+                second_factor = ((self._corner_point_list[counter][0] * self._corner_point_list[counter+1][1]) - (self._corner_point_list[counter+1][0] * self._corner_point_list[counter][1]))
+                x_first_factor = self._corner_point_list[counter][0] + self._corner_point_list[counter+1][0]
+                y_first_factor = self._corner_point_list[counter][1] + self._corner_point_list[counter+1][1]
+
+            x_centroid = x_centroid + (x_first_factor * second_factor)
+            y_centroid = y_centroid + (y_first_factor * second_factor)
+            
+        x_centroid = (1/(6 * geometry_area)) * x_centroid
+        y_centroid = (1/(6 * geometry_area)) * y_centroid
+
+        centroid_point: np.array = np.array([x_centroid, y_centroid])
+        return centroid_point
+
+
+    def calculate_orthogonal_vector_point_to_line(self, orthogonal_point: np.array, line: np.array, start_point_line: np.array) -> np.array:
+        nominator: float = -(line[0] * start_point_line[0]) - (line[1] * start_point_line[1])
+        denominator: float = pow(line[0], 2) + pow(line[1], 2)
+
+        factor: float
+        try:
+            factor = nominator / denominator
+        except ZeroDivisionError:
+            print("Devided by zero in the 'calculate_orthogonal_vector_point_to_line' method!")
+            return None
+
+        point_on_line: np.array = orthogonal_point + start_point_line + factor * line
+        vector_point_to_line: np.array = point_on_line - orthogonal_point
+        return vector_point_to_line
+
+
     def print_contour_info(self):
         print("Corner info:")
+
+        print("Geometry area: " + str(self.calculate_area()))
+        print("Centroid point: " + str(self.calculate_centroid()))
+
         for corner in self._corner_point_list:
             print(corner)
 
@@ -59,9 +126,7 @@ class GeometryContour(ABC):
             print(edge)
 
     def plot_corners(self, **kwargs):
-        block: bool = False
-        if 'block' in kwargs:
-            block = kwargs.get("block")
+        block: bool = self.check_if_block_exists(**kwargs)
         
         for point in self._corner_point_list:
             plot.plot(point[0], point[1], "bo")
@@ -69,9 +134,7 @@ class GeometryContour(ABC):
         plot.show(block=block)
 
     def plot_edges(self, **kwargs):
-        block: bool = False
-        if 'block' in kwargs:
-            block = kwargs.get("block")
+        block: bool = self.check_if_block_exists(**kwargs)
 
         for edge in self._edge_list:
             x_start: float = edge.start_point[0]
@@ -80,9 +143,31 @@ class GeometryContour(ABC):
             x_end: float = end_point[0]
             y_end: float = end_point[1]
             plot.plot([x_start, x_end], [y_start, y_end], 'r-')
-            pass
 
         plot.show(block=block)
+
+    def plot_centroid(self, **kwargs):
+        block: bool = self.check_if_block_exists(**kwargs)
+
+        centroid_point: np.array = self.calculate_centroid()
+        plot.plot(centroid_point[0], centroid_point[1], "go")
+
+        plot.show(block=block)
+
+    def plot_orthogonal_vector_controid_to_edge(self, **kwargs):
+        block: bool = self.check_if_block_exists(**kwargs)
+        centroid = self.calculate_centroid()
+        for edge in self._edge_list:
+            orthogonal_vector: np.array = self.calculate_orthogonal_vector_point_to_line(centroid, edge.edge_vector, edge.start_point)
+            plot.plot([centroid[0], centroid[0]+orthogonal_vector[0]], [centroid[1], orthogonal_vector[1]], "g-")
+
+        plot.show(block=block)
+
+    def check_if_block_exists(self, **kwargs) -> bool:
+        block: bool = False
+        if 'block' in kwargs:
+            block = kwargs.get("block")
+        return block
 
 
 
