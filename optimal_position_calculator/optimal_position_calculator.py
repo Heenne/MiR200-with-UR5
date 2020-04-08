@@ -9,6 +9,20 @@ from geometry_info import GeometryContour, Box, Cylinder, IsoscelesTriangle, Rig
 from urdf_reader import URDFReader
 from urdf_reader import GeometryType
 
+def plot_contour_info(object_contour, extended_object_contour, extended_object_contour2):
+    object_contour.print_contour_info()
+    object_contour.plot_corners(block=False)
+    object_contour.plot_edges(block=False)
+    object_contour.plot_centroid(block=False)
+    
+    extended_object_contour.print_contour_info()
+    extended_object_contour.plot_corners(block=False)
+    extended_object_contour.plot_edges(block=False)
+
+    extended_object_contour2.print_contour_info()
+    extended_object_contour2.plot_corners(block=False)
+    extended_object_contour2.plot_edges(block=False)
+
 if __name__ == '__main__':
     script_dir = os.path.dirname(__file__)
     print(script_dir)
@@ -40,25 +54,18 @@ if __name__ == '__main__':
         
         
     object_contour.import_contour(**object_contour_params)
-    object_contour.print_contour_info()
-    object_contour.plot_corners(block=False)
-    object_contour.plot_edges(block=False)
-    object_contour.plot_centroid(block=False)
-    # object_contour.plot_orthogonal_vector_centroid_to_edge(block = False)
-
+    
     extended_object_contour: GeometryContour = RightAngledTriangle()
     extended_object_contour.import_contour_with_offset(object_contour, 0.8)
-    extended_object_contour.print_contour_info()
-    extended_object_contour.plot_corners(block=False)
-    extended_object_contour.plot_edges(block=False)
-
+   
     extended_object_contour2: GeometryContour = RightAngledTriangle()
     extended_object_contour2.import_contour_with_offset(object_contour, 1.2)
-    extended_object_contour2.print_contour_info()
-    extended_object_contour2.plot_corners(block=False)
-    extended_object_contour2.plot_edges(block=False)
-
+    
+    plot_contour_info(object_contour, extended_object_contour, extended_object_contour2)
 
     axis: plot.Axes = plot.gca() # Get current axis object and set x and y to be equal so a square is a square
     axis.axis("equal")
     plot.show() #Let this be the last command so the plots wont be closed instantly
+
+
+
