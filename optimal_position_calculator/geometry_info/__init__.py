@@ -8,15 +8,55 @@ from math import sqrt, pow
 import numpy as np
 
 class EdgeInfo:
-    start_point: np.array
-    edge_vector: np.array
+    _start_point: np.array = None
+    _end_point: np.array = None
+    _edge_vector: np.array = None
 
-    def __init__(self, start_point: np.array, end_point: np.array):
-        self.start_point = start_point
-        self.edge_vector = end_point - start_point
+    def __init__(self, **kwargs):
+        if "start_point" in kwargs:
+            self.start_point = kwargs.get("start_point")
+        if "end_point" in kwargs:    
+            self.end_point = kwargs.get("end_point")
+
+        self.calculate_edge_vector()
 
     def __str__(self):
-        return "Start point: " + str(self.start_point) + " | Edge vector: " + str(self.edge_vector)
+        output: str = ""
+        if self._start_point is not None:
+            output = output + "Start point: " + str(self._start_point)
+        if self._end_point is not None:
+            output = output + " | End point: " + str(self._end_point)
+        if self._edge_vector is not None:
+            output = output + " | Edge vector: " + str(self._edge_vector)
+        return  output
+
+    @property
+    def start_point(self):
+        return self._start_point
+
+    @start_point.setter
+    def start_point(self, value: np.array):
+        self._start_point = value
+        self.calculate_edge_vector()
+
+    @property
+    def end_point(self):
+        return self._end_point
+
+    @end_point.setter
+    def end_point(self, value: np.array):
+        self._end_point = value
+        self.calculate_edge_vector()
+
+    @property
+    def edge_vector(self):
+        return self._edge_vector
+
+
+    def calculate_edge_vector(self):
+        if self._start_point is not None and self._end_point is not None:
+            self._edge_vector = self._end_point - self._start_point
+    
 
 
 class GeometryContour(ABC):
@@ -31,13 +71,81 @@ class GeometryContour(ABC):
         super().__init__()
 
 
+    @property
+    def corner_point_list(self) -> list:
+        return self._corner_point_list
+
+    
+    @property
+    def edge_list(self) -> list:
+        return self._edge_list
+
+
     @abstractclassmethod
-    def import_contour(self):
+    def import_contour(self, **kwargs):
         pass
         #Assumption, all contours will be spawned with the centre of mass in the x = 0 and y = 0 point of the world 
 
 
+    def import_contour_with_offset(self, contour: 'GeometryContour', offset_value: float):
+        print("contour edge list: " + str(len(contour.edge_list)))
+        for counter in range(0,len(contour.edge_list)):
+            before_edge: np.array
+            current_edge: np.array
+            after_edge: np.array
+
+            if (counter - 1) < 0:
+                before_edge = contour.edge_list[-1] # last element
+            else:
+                before_edge = contour.edge_list[counter - 1]
+
+            if (counter + 1) == len(contour.edge_list):
+                after_edge = contour.edge_list[0]
+            else:
+                after_edge = contour.edge_list[counter + 1]
+
+            current_edge = contour.edge_list[counter]
+            centroid: np.array = contour.calculate_centroid()
+
+            orthogonal_before_edge: np.array = self.calculate_orthogonal_vector_point_to_line(orthogonal_point= centroid,
+                                                                                              line=before_edge.edge_vector,
+                                                                                              start_point_line=before_edge.start_point)
+
+            extended_orthogonal_before_edge: np.array = self.extend_vector_by_length(orthogonal_before_edge, offset_value)
+
+            orthogonal_current_edge: np.array = self.calculate_orthogonal_vector_point_to_line(orthogonal_point= centroid,
+                                                                                               line=current_edge.edge_vector,
+                                                                                               start_point_line=current_edge.start_point)
+
+            extended_orthogonal_current_edge: np.array = self.extend_vector_by_length(orthogonal_current_edge, offset_value)
+
+            orthogonal_after_edge: np.array = self.calculate_orthogonal_vector_point_to_line(orthogonal_point= centroid,
+                                                                                             line=after_edge.edge_vector,
+                                                                                             start_point_line=after_edge.start_point)
+
+            extended_orthogonal_after_edge: np.array = self.extend_vector_by_length(orthogonal_after_edge, offset_value)
+
+            start_point: np.array = self.calculator_vector_line_intersection_point(global_lead_vector= centroid,
+                                                                                   lead_vector_1=extended_orthogonal_current_edge,
+                                                                                   direction_vector_1=current_edge.edge_vector,
+                                                                                   lead_vector_2=extended_orthogonal_before_edge,
+                                                                                   direction_vector_2=before_edge.edge_vector)
+
+            end_point: np.array = self.calculator_vector_line_intersection_point(global_lead_vector=centroid,
+                                                                                 lead_vector_1=extended_orthogonal_current_edge,
+                                                                                 direction_vector_1=current_edge.edge_vector,
+                                                                                 lead_vector_2=extended_orthogonal_after_edge,
+                                                                                 direction_vector_2=after_edge.edge_vector)
+
+            new_edge: EdgeInfo = EdgeInfo(start_point= start_point, end_point= end_point)
+            # self._edge_list.append(new_edge)
+            self._corner_point_list.append(start_point)
+
+        self.create_contour_edges()
+
+
     def create_contour_edges(self):
+        print(len(self._corner_point_list))
         for counter in range(0, len(self._corner_point_list)):
             start_point: np.array = self._corner_point_list[counter]
             end_point: np.array
@@ -113,6 +221,47 @@ class GeometryContour(ABC):
         return vector_point_to_line
 
 
+    def extend_vector_by_length(self, vector_to_extend: np.array, length_to_extend: float) -> np.array :
+        extended_vector: np.array
+        length_of_vector: float = np.linalg.norm(vector_to_extend)
+        extended_vector = ((length_of_vector + length_to_extend) / length_of_vector) * vector_to_extend
+        return extended_vector
+
+
+    def calculator_vector_line_intersection_point(self, global_lead_vector: np.array, lead_vector_1: np.array, direction_vector_1: np.array, lead_vector_2: np.array, direction_vector_2: np.array) -> np.array:
+        factor_1_numerator: float = ((lead_vector_2[1] * direction_vector_2[0]) + (lead_vector_1[0] * direction_vector_2[1]) - (lead_vector_2[0] * direction_vector_2[1]) - (lead_vector_1[1] * direction_vector_2[0]))
+        factor_1_denumerator: float = ((direction_vector_1[1] * direction_vector_2[0]) - (direction_vector_1[0] * direction_vector_2[1]))
+
+        factor_1: float = factor_1_numerator / factor_1_denumerator
+
+        return global_lead_vector + lead_vector_1 + (factor_1 * direction_vector_1)
+        
+
+    # def calculate_extended_corner_position(self, edge: EdgeInfo, centroid: np.array, contour_offset: float) -> np.array:
+    #     orthogonal_vector: np.array = self.calculate_orthogonal_vector_point_to_line(centroid, edge.edge_vector, edge.start_point)
+    #     extended_orthogonal_vector: np.array = self.extend_vector_by_length(orthogonal_vector, contour_offset)
+    #     print(extended_orthogonal_vector)
+    #     centroid_to_corner_vector: np.array = edge.start_point - centroid
+    #     print(centroid_to_corner_vector)
+
+    #     factor_numerator = ((extended_orthogonal_vector[1] * edge.edge_vector[0]) - (extended_orthogonal_vector[0] * edge.edge_vector[1]))
+    #     factor_denominator = ((centroid_to_corner_vector[1] * edge.edge_vector[0]) - (centroid_to_corner_vector[0] * edge.edge_vector[1]))
+        
+    #     factor: float
+    #     try:
+    #         print(str(factor_numerator) + " | " + str(factor_denominator))
+    #         factor = factor_numerator / factor_denominator
+    #     except ZeroDivisionError:
+    #         print("Devided by zero in the 'calculate_extended_corner_position' method!")
+    #         return None
+
+    #     print(factor)
+
+    #     extended_corner: np.array = centroid + (factor * centroid_to_corner_vector)
+        
+    #     return extended_corner
+
+
     def print_contour_info(self):
         print("Corner info:")
 
@@ -159,9 +308,20 @@ class GeometryContour(ABC):
         centroid = self.calculate_centroid()
         for edge in self._edge_list:
             orthogonal_vector: np.array = self.calculate_orthogonal_vector_point_to_line(centroid, edge.edge_vector, edge.start_point)
+            orthogonal_vector = self.extend_vector_by_length(orthogonal_vector, 0.3)
             plot.plot([centroid[0], centroid[0]+orthogonal_vector[0]], [centroid[1], orthogonal_vector[1]], "g-")
 
         plot.show(block=block)
+
+    
+    # def plot_extended_corners(self):
+
+    #     for edge in self._edge_list:
+    #         extended_corner = self.calculate_extended_corner_position(edge, self.calculate_centroid(), 0.3)
+    #         plot.plot([edge.start_point[0] , extended_corner[0]], [edge.start_point[1] , extended_corner[1]], "g-")
+
+    #     plot.show(block=False)
+
 
     def check_if_block_exists(self, **kwargs) -> bool:
         block: bool = False
