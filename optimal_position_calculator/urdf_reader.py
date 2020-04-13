@@ -14,6 +14,7 @@ class URDFReader:
     _xml_root_node: etree.ElementTree
     geometry_type: GeometryType
     size_info: str
+    mass: float
     
     object_name: str
     link_name: str
@@ -36,6 +37,8 @@ class URDFReader:
         elif self.geometry_type==GeometryType.RightAngledTriangle:
             self.size_info = self._xml_root_node.find("link").find("collision").find("geometry").find("mesh").get("scale")
 
+        self.mass = float(self._xml_root_node.find("link").find("inertial").find("mass").get("value"))
+
         self.print_urdf_info()
 
     
@@ -44,6 +47,7 @@ class URDFReader:
         print("link name: " + self.link_name, end="\n")
         print("Geometry type: " + str(self.geometry_type), end="\n")
         print("Size info: " + self.size_info, end="\n")
+        print("Mass: " + str(self.mass), end="\n")
     
     
     def __str_to_geometry_type(self, geometry_xml_element: etree.Element) -> GeometryType:
