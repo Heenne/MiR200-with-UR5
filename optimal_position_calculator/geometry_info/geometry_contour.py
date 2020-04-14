@@ -54,8 +54,7 @@ class GeometryContour:
 
             extended_orthogonal_current_edge: np.array = self.extend_vector_by_length(orthogonal_current_edge, offset_value)
 
-            start_point: np.array = self.calculator_vector_line_intersection_point(global_lead_vector= centroid,
-                                                                                   lead_vector_1=extended_orthogonal_current_edge,
+            start_point: np.array = self.calculate_vector_line_intersection_point(lead_vector_1=extended_orthogonal_current_edge,
                                                                                    direction_vector_1=current_edge.edge_vector,
                                                                                    lead_vector_2=extended_orthogonal_before_edge,
                                                                                    direction_vector_2=before_edge.edge_vector)
@@ -68,6 +67,21 @@ class GeometryContour:
     def add_contour_corner(self, additional_corner: np.array):
         self._corner_point_list.append(additional_corner)
         self.create_contour_edges()
+
+
+    def replace_contour_corner(self, index: int, new_corner_point: np.array):
+        self._corner_point_list[index] = new_corner_point
+        self.create_contour_edges()
+
+
+    def get_index_of_corner(self, searched_corner: np.array) -> int:
+        index: int = 0
+        for corner_point in self._corner_point_list:
+            if corner_point is searched_corner:
+                return index
+
+            index = index + 1
+        return -1
 
 
     def create_contour_edges(self):
@@ -147,9 +161,21 @@ class GeometryContour:
         return vector_point_to_line
 
 
-    def calculate_min_distance_point_to_line(self, point: np.array, line: np.array, start_point_line: np.array) -> float:
+    def calculate_distance_point_to_line(self, point: np.array, line: np.array, start_point_line: np.array) -> float:
         vector_point_to_line: np.array = self.calculate_orthogonal_vector_point_to_line(point, line, start_point_line)
         return np.linalg.norm(vector_point_to_line)
+
+
+    def get_closest_edge_to_point(self, point: np.array) -> EdgeInfo:
+        shortest_edge: EdgeInfo = self._edge_list[0]
+        shortest_distance: float = self.calculate_distance_point_to_line(point, shortest_edge.edge_vector, shortest_edge.start_point)
+        for edge_info in self._edge_list:
+            new_distance: float = self.calculate_distance_point_to_line(point, edge_info.edge_vector, edge_info.start_point)
+            if new_distance < shortest_distance:
+                shortest_edge = edge_info
+                shortest_distance = new_distance
+
+        return shortest_edge
 
 
     def extend_vector_by_length(self, vector_to_extend: np.array, length_to_extend: float) -> np.array :
@@ -159,14 +185,28 @@ class GeometryContour:
         return extended_vector
 
 
-    def calculator_vector_line_intersection_point(self, global_lead_vector: np.array, lead_vector_1: np.array, direction_vector_1: np.array, lead_vector_2: np.array, direction_vector_2: np.array) -> np.array:
+    def calculate_vector_line_intersection_point(self, lead_vector_1: np.array, direction_vector_1: np.array, lead_vector_2: np.array, direction_vector_2: np.array) -> np.array:
         factor_1_numerator: float = self._calculate_vector_line_intersection_factor_1_numerator(lead_vector_1, lead_vector_2, direction_vector_2)
         factor_1_denumerator: float = self._calculate_vector_line_intersection_factor_1_denumerator(direction_vector_1, direction_vector_2)
 
         factor_1: float = factor_1_numerator / factor_1_denumerator
 
-        return global_lead_vector + lead_vector_1 + (factor_1 * direction_vector_1)
+        return lead_vector_1 + (factor_1 * direction_vector_1)
     
+
+    def calculate_vector_intersection_point(self, lead_vector_1: np.array, direction_vector_1: np.array, lead_vector_2: np.array, direction_vector_2: np.array):
+        factor_1_numerator: float = self._calculate_vector_line_intersection_factor_1_numerator(lead_vector_1, lead_vector_2, direction_vector_2)
+        factor_1_denumerator: float = self._calculate_vector_line_intersection_factor_1_denumerator(direction_vector_1, direction_vector_2)
+        factor_2_numerator: float = self._calculate_vector_line_intersection_factor_2_numerator(lead_vector_1, direction_vector_1, lead_vector_2)
+        factor_2_denumerator: float = self._calculate_vector_line_intersection_factor_2_denumerator(direction_vector_1, direction_vector_2)
+
+        factor_1: float = round(factor_1_numerator / factor_1_denumerator, 10)
+        factor_2: float = round(factor_2_numerator / factor_2_denumerator, 10)
+
+        if factor_1 > 0 and factor_1 < 1 and factor_2 > 0 and factor_2 < 1:
+            return lead_vector_1 + (factor_1 * direction_vector_1)
+        else:
+            return None
 
     def _calculate_vector_line_intersection_factor_1_numerator(self, lead_vector_1: np.array, lead_vector_2: np.array, direction_vector_2: np.array) -> float:
         return ((lead_vector_2[1] * direction_vector_2[0]) + (lead_vector_1[0] * direction_vector_2[1]) - (lead_vector_2[0] * direction_vector_2[1]) - (lead_vector_1[1] * direction_vector_2[0]))
@@ -238,13 +278,29 @@ class GeometryContour:
             factor_1: float = factor_1_numerator / factor_1_denumerator
             factor_2: float = factor_2_numerator / factor_2_denumerator
 
-            if factor_1 >= 0 and factor_1 <= 1 and factor_2 >= 0:
+            if factor_1 >= 0 and factor_1 < 1 and factor_2 >= 0:
                 intersections = intersections + 1
 
         if (intersections % 2) == 1:
             return True
         else:
             return False
+
+
+    def do_edges_intersect(self) -> bool:
+        for edge_info_outer in self._edge_list:
+            for edge_info_inner in self._edge_list:
+                if edge_info_inner is edge_info_outer:
+                    continue
+
+                intersection_point: np.array = self.calculate_vector_intersection_point(edge_info_outer.start_point, 
+                                                                                        edge_info_outer.edge_vector,
+                                                                                        edge_info_inner.start_point,
+                                                                                        edge_info_inner.edge_vector)
+                if intersection_point is not None:
+                    return True
+
+        return False
 
 
 
