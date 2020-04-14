@@ -65,7 +65,13 @@ class GeometryContour:
         self.create_contour_edges()
 
 
+    def add_contour_corner(self, additional_corner: np.array):
+        self._corner_point_list.append(additional_corner)
+        self.create_contour_edges()
+
+
     def create_contour_edges(self):
+        self._edge_list.clear()
         for counter in range(0, len(self._corner_point_list)):
             start_point: np.array = self._corner_point_list[counter]
             end_point: np.array
@@ -141,6 +147,11 @@ class GeometryContour:
         return vector_point_to_line
 
 
+    def calculate_min_distance_point_to_line(self, point: np.array, line: np.array, start_point_line: np.array) -> float:
+        vector_point_to_line: np.array = self.calculate_orthogonal_vector_point_to_line(point, line, start_point_line)
+        return np.linalg.norm(vector_point_to_line)
+
+
     def extend_vector_by_length(self, vector_to_extend: np.array, length_to_extend: float) -> np.array :
         extended_vector: np.array
         length_of_vector: float = np.linalg.norm(vector_to_extend)
@@ -172,7 +183,7 @@ class GeometryContour:
     def _calculate_vector_line_intersection_factor_2_denumerator(self, direction_vector_1: np.array, direction_vector_2: np.array) -> float:
         return ((direction_vector_2[1] * direction_vector_1[0]) - (direction_vector_2[0] * direction_vector_1[1]))
 
-    def get_max_x(self):
+    def get_x_max(self):
         max_x: float = self._corner_point_list[0][0] #Get first x value as init value
         for corner_point in self._corner_point_list:
             if(max_x < corner_point[0]):
@@ -180,7 +191,7 @@ class GeometryContour:
 
         return max_x
 
-    def get_min_x(self):
+    def get_x_min(self):
         min_x: float = self._corner_point_list[0][0] #Get first x value as init value
         for corner_point in self._corner_point_list:
             if(min_x > corner_point[0]):
@@ -189,7 +200,7 @@ class GeometryContour:
         return min_x
 
 
-    def get_max_y(self):
+    def get_y_max(self):
         max_y: float = self._corner_point_list[0][1] #Get first y value as init value
         for corner_point in self._corner_point_list:
             if(max_y < corner_point[1]):
@@ -197,7 +208,7 @@ class GeometryContour:
 
         return max_y
 
-    def get_min_y(self):
+    def get_y_min(self):
         min_y: float = self._corner_point_list[0][1] #Get first y value as init value
         for corner_point in self._corner_point_list:
             if(min_y > corner_point[1]):
@@ -208,7 +219,7 @@ class GeometryContour:
 
     def is_point_in_contour(self, point: np.array) -> bool:
         #First simple check if point is in max values of polygon
-        if point[0] > self.get_max_x() or point[0] < self.get_min_x() or point[1] > self.get_max_y() or point[1] < self.get_min_y():
+        if point[0] > self.get_x_max() or point[0] < self.get_x_min() or point[1] > self.get_y_max() or point[1] < self.get_y_min():
             return False
 
         testing_direction_vector: np.array = np.array([1,0]) #Just horizontal vector
