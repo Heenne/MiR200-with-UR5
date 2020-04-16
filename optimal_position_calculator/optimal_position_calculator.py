@@ -17,7 +17,7 @@ from urdf_reader import GeometryType
 NUMBER_OF_ROBOTS: int = 4
 
 
-def plot_contour_info(object_to_move, extended_object_contour, extended_object_contour2, grip_area):
+def plot_contour_info(object_to_move, extended_object_contour, grip_area):
     object_to_move.print_info()
     object_to_move.plot_corners(block=False)
     object_to_move.plot_edges(block=False)
@@ -27,13 +27,27 @@ def plot_contour_info(object_to_move, extended_object_contour, extended_object_c
     extended_object_contour.plot_corners(block=False)
     extended_object_contour.plot_edges(block=False)
 
-    extended_object_contour2.print_info()
-    extended_object_contour2.plot_corners(block=False)
-    extended_object_contour2.plot_edges(block=False)
-
     grip_area.print_info()
     grip_area.plot_corners(block=False)
     grip_area.plot_edges(block=False)
+
+
+def create_grid(contour: GeometryContour) -> list:
+    x_max_area: float = contour.get_x_max()
+    x_min_area: float = contour.get_x_min()
+    y_max_area: float = contour.get_y_max()
+    y_min_area: float = contour.get_y_min()
+    
+    grid_point_list: list = list()
+    x_list: np.array = np.arange(x_min_area, x_max_area, 0.05) #Change to linspace and calculate how many points I want? Should be better as Internet tells
+    y_list: np.array = np.arange(y_min_area, y_max_area, 0.05)
+    for x_counter in x_list:
+        for y_counter in y_list:
+            grid_point: np.array = np.array([x_counter, y_counter])
+            if contour.is_point_in_contour(grid_point):
+                grid_point_list.append(grid_point)
+
+    return grid_point_list
 
 
 if __name__ == '__main__':
@@ -68,31 +82,12 @@ if __name__ == '__main__':
     object_to_move.import_urdf_info(**object_contour_params)
     
     extended_object_contour: GeometryContour = GeometryContour()
-    extended_object_contour.import_contour_with_offset(object_to_move, 0.8)
-   
-    extended_object_contour2: GeometryContour = GeometryContour()
-    extended_object_contour2.import_contour_with_offset(object_to_move, 1.2)
-
+    extended_object_contour.import_contour_with_offset(object_to_move, 0.4)
+    
     grip_area: GeometryContour = GeometryContour()
     grip_area.import_contour_with_offset(object_to_move, -0.1)
 
-
-
-    # Lay grid over area to grip
-    x_max_area: float = grip_area.get_x_max()
-    x_min_area: float = grip_area.get_x_min()
-    y_max_area: float = grip_area.get_y_max()
-    y_min_area: float = grip_area.get_y_min()
-    
-    grid_point_list: list = list()
-    x_list: np.array = np.arange(x_min_area, x_max_area, 0.1) #Change to linspace and calculate how many points I want? Should be better as Internet tells
-    y_list: np.array = np.arange(y_min_area, y_max_area, 0.1)
-    for x_counter in x_list:
-        for y_counter in y_list:
-            grid_point: np.array = np.array([x_counter, y_counter])
-            if grip_area.is_point_in_contour(grid_point):
-                grid_point_list.append(grid_point)
-    #end create grid method
+    grid_point_list = create_grid(grip_area)
 
     #init gripping positions
     grip_point_area: GeometryContour = GeometryContour()
@@ -118,7 +113,6 @@ if __name__ == '__main__':
         plot.plot(closest_edge.start_point[0], closest_edge.start_point[1], "ko")
         copy_of_grip_point_area: GeometryContour = grip_point_area
 
-        # possible_grip_positions: dict = dict()
         best_result: float = 100000000
         best_point: np.array
         for grid_point in grid_point_list:
@@ -139,13 +133,40 @@ if __name__ == '__main__':
                 best_point = grid_point
 
         grip_point_area.replace_contour_corner(index_of_corner, best_point)
+    # end method for optimizing grip position
+
+    
+
     
     grip_point_area.plot_corners()
     grip_point_area.plot_edges()
 
+    ur5_base_link_pose_list_list: list = list()
 
+    for grip_point in grip_point_area.corner_point_list:
+        arm_base_pose_possible: GeometryContour = GeometryContour()
+        
+        for counter in range(0,100):
+            pose: np.array = np.array([grip_point[0] + 0.75*cos(((2*pi)/100) * counter), grip_point[1] + 0.75 * sin(((2*pi)/100) * counter)])
+            arm_base_pose_possible.add_contour_corner(pose)
 
+        list_with_points = create_grid(arm_base_pose_possible)
+        
+        possible_ur5_base_link_pose_list: list = list()
+        for point in list_with_points:
+            if not extended_object_contour.is_point_in_contour(point):
+                possible_ur5_base_link_pose_list.append(point)
+        
+        ur5_base_link_pose_list_list.append(possible_ur5_base_link_pose_list)
 
+    #Random ienen Punkt in einer Punktwolke auswählen
+    #Anschließend wieder alle bis auf einen Punkt statisch machen und den einen optimieren.
+    #Danach den nächsten Punkt verschieben usw.
+
+    
+
+    
+    
         
 
     
@@ -157,7 +178,7 @@ if __name__ == '__main__':
 
 
 
-    plot_contour_info(object_to_move, extended_object_contour, extended_object_contour2, grip_area)
+    plot_contour_info(object_to_move, extended_object_contour, grip_area)
 
     axis: plot.Axes = plot.gca() # Get current axis object and set x and y to be equal so a square is a square
     axis.axis("equal")

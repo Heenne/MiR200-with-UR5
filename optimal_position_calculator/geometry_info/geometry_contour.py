@@ -262,7 +262,8 @@ class GeometryContour:
         if point[0] > self.get_x_max() or point[0] < self.get_x_min() or point[1] > self.get_y_max() or point[1] < self.get_y_min():
             return False
 
-        testing_direction_vector: np.array = np.array([1,0]) #Just horizontal vector
+        testing_direction_vector: np.array = np.array([1.34567,0.2345678]) #Selected a very weird vector because I see no solution to find out if this vector iscrossing through a corner or just being a tangent to the corner. This makes it impossible to distinguish between in or out of the contour
+        #This is an easy but ugly fix
         
         intersections: int = 0
 
