@@ -14,7 +14,7 @@ from urdf_reader import URDFReader
 from urdf_reader import GeometryType
 
 
-NUMBER_OF_ROBOTS: int = 9
+NUMBER_OF_ROBOTS: int = 4
 
 
 def plot_contour_info(object_to_move, extended_object_contour, extended_object_contour2, grip_area):
@@ -85,14 +85,13 @@ if __name__ == '__main__':
     y_min_area: float = grip_area.get_y_min()
     
     grid_point_list: list = list()
-    x_list: np.array = np.arange(x_min_area, x_max_area, 0.15) #Change to linspace and calculate how many points I want? Should be better as Internet tells
-    y_list: np.array = np.arange(y_min_area, y_max_area, 0.15)
+    x_list: np.array = np.arange(x_min_area, x_max_area, 0.1) #Change to linspace and calculate how many points I want? Should be better as Internet tells
+    y_list: np.array = np.arange(y_min_area, y_max_area, 0.1)
     for x_counter in x_list:
         for y_counter in y_list:
             grid_point: np.array = np.array([x_counter, y_counter])
             if grip_area.is_point_in_contour(grid_point):
                 grid_point_list.append(grid_point)
-                plot.plot(grid_point[0], grid_point[1], "co")
     #end create grid method
 
     #init gripping positions
@@ -107,22 +106,54 @@ if __name__ == '__main__':
     
     grip_point_area.plot_corners()
     grip_point_area.plot_edges()
-    #end init gripping position
+    # end init gripping position
+
+    # Method for optimizing the gripping position
+    # Multiple problems! Nimmt am Ende immer die gleiche Seite, obwohl diese nichtmehr verbessert werden kann.
+    # Lokale Minima werden angenommen und Optimierer kommt da nichtmehr raus
+
+    for counter in range(0,10):
+        closest_edge: EdgeInfo = grip_point_area.get_closest_edge_to_point(centroid_object_to_move)
+        index_of_corner: int = grip_point_area.get_index_of_corner(closest_edge.start_point) #Move start point
+        plot.plot(closest_edge.start_point[0], closest_edge.start_point[1], "ko")
+        copy_of_grip_point_area: GeometryContour = grip_point_area
+
+        # possible_grip_positions: dict = dict()
+        best_result: float = 100000000
+        best_point: np.array
+        for grid_point in grid_point_list:
+            copy_of_grip_point_area.replace_contour_corner(index_of_corner, grid_point)
+            if not copy_of_grip_point_area.is_point_in_contour(centroid_object_to_move):
+                continue
+
+            if copy_of_grip_point_area.do_edges_intersect():
+                continue
+            
+            result: float= 0.0
+            for edge_info in copy_of_grip_point_area.edge_list:
+                distance: float = copy_of_grip_point_area.calculate_distance_point_to_line(centroid_object_to_move, edge_info.edge_vector, edge_info.start_point)
+                result = result + (1/pow(distance,2))
+
+            if best_result >= result:
+                best_result = result
+                best_point = grid_point
+
+        grip_point_area.replace_contour_corner(index_of_corner, best_point)
+    
+    grip_point_area.plot_corners()
+    grip_point_area.plot_edges()
+
+
+
+
+        
 
     
-    closest_edge: EdgeInfo = grip_point_area.get_closest_edge_to_point(centroid_object_to_move)
-    index_of_corner: int = grip_point_area.get_index_of_corner(closest_edge.start_point) #Move start point
-    plot.plot(closest_edge.start_point[0], closest_edge.start_point[1], "ko")
-    copy_of_grip_point_area: GeometryContour = grip_point_area
-    for grid_point in grid_point_list:
-        copy_of_grip_point_area.replace_contour_corner(index_of_corner, grid_point)
-        if not copy_of_grip_point_area.is_point_in_contour(centroid_object_to_move):
-            continue
+    
 
-        if copy_of_grip_point_area.do_edges_intersect():
-            continue
 
-        plot.plot(grid_point[0], grid_point[1], "ko")
+
+        
 
 
 
