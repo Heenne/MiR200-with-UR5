@@ -2,8 +2,8 @@ import sys
 import os
 
 from matplotlib import pyplot as plot
-import numpy as np
 import random
+import numpy as np
 from math import sin, cos, pi
 
 from geometry_info.geometry_contour import GeometryContour
@@ -159,6 +159,33 @@ if __name__ == '__main__':
     # Random einen Punkt in einer Punktwolke auswählen
     # Anschließend wieder alle bis auf einen Punkt statisch machen und den einen optimieren.
     # Danach den nächsten Punkt verschieben usw.
+    optimized_grip_contour: GeometryContour = GeometryContour()
+    # Get one random point from each list to start the optimizing process
+    for pose_list in ur5_base_link_pose_list_list:
+        length_of_list: int = len(ur5_base_link_pose_list_list)
+        random_index: int = random.randint(0, length_of_list)
+        optimized_grip_contour.add_contour_corner(pose_list[random_index])
+
+    for counter in range(0, 20):
+        corner_to_change: int = counter % 4  # 0 = first corner and so on
+        print(corner_to_change)
+        current_area: float = optimized_grip_contour.calculate_area()
+        current_point: np.array = optimized_grip_contour.corner_point_list[corner_to_change]
+
+        best_area: float = current_area
+        best_point: np.array = current_point
+        copy_contour: GeometryContour = optimized_grip_contour
+        for point in ur5_base_link_pose_list_list[corner_to_change]:  # First corner comes from the first list and so on
+            copy_contour.replace_contour_corner(corner_to_change, point)
+            if best_area > copy_contour.calculate_area():
+                best_area = copy_contour.calculate_area()
+                best_point = point
+
+        if best_point is not current_point:
+            optimized_grip_contour.replace_contour_corner(corner_to_change, best_point)
+
+    optimized_grip_contour.plot_corners()
+    optimized_grip_contour.plot_edges()
 
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
 
