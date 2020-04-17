@@ -8,7 +8,7 @@ from geometry_info.geometry_contour import GeometryContour
 
 
 class MovableObject(GeometryContour):
-    _GAZEBO_FACTOR: float = 1000 #This factor is necessary as Gazebo puts a 1000 factor in between. So in the urdf file is a necessary 0.001 factor to show to right dimensions of the model in Gazebo
+    _GAZEBO_FACTOR: float = 1000  # This factor is necessary as Gazebo puts a 1000 factor in between. So in the urdf file is a necessary 0.001 factor to show to right dimensions of the model in Gazebo
 
     mass: float
     height: float
@@ -16,9 +16,8 @@ class MovableObject(GeometryContour):
     def __init__(self):
         super().__init__()
 
-    
     def import_urdf_info(self, **kwargs):
-        self.height = float(kwargs.get("height")) * 0.1 * self._GAZEBO_FACTOR # 0.1 because default value is 0.1m and for Gazebofactor see MovableObject class
+        self.height = float(kwargs.get("height")) * 0.1 * self._GAZEBO_FACTOR  # 0.1 because default value is 0.1m and for Gazebofactor see MovableObject class
         self.mass = float(kwargs.get("mass"))
 
     def print_info(self):
@@ -35,7 +34,6 @@ class Box(MovableObject):
 
     def __init__(self):
         super().__init__()
-
 
     def import_urdf_info(self, **kwargs):
         super().import_urdf_info(**kwargs)
@@ -56,7 +54,7 @@ class Box(MovableObject):
         self._corner_point_list.append(point4)
 
         self.create_contour_edges()
-   
+
 
 class Cylinder(MovableObject):
     __RESOLUTION: int = 100
@@ -69,14 +67,15 @@ class Cylinder(MovableObject):
         super().import_urdf_info(**kwargs)
         self._radius = float(kwargs.get("radius"))
 
-        for counter in range(0,self.__RESOLUTION):
+        for counter in range(0, self.__RESOLUTION):
             x_value = self._radius * cos(((2*pi)/self.__RESOLUTION) * counter)
             y_value = self._radius * sin(((2*pi)/self.__RESOLUTION) * counter)
 
             point = np.array([x_value, y_value])
             self._corner_point_list.append(point)
-        
+
         self.create_contour_edges()
+
 
 class IsoscelesTriangle(MovableObject):
     __DEFAULT_SIDE_LENGTH: float = 1.0
@@ -86,11 +85,10 @@ class IsoscelesTriangle(MovableObject):
     def __init__(self):
         super().__init__()
 
-
     def import_urdf_info(self, **kwargs):
         super().import_urdf_info(**kwargs)
         self._scale_factor: float = float(kwargs.get("scale")) * self._GAZEBO_FACTOR
-        
+
         self._scaled_side_length: float = self.__DEFAULT_SIDE_LENGTH * self._scale_factor
         scaled_height: float = self._calculate_height(self._scaled_side_length)
 

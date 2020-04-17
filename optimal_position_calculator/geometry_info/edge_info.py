@@ -10,7 +10,7 @@ class EdgeInfo:
     def __init__(self, **kwargs):
         if "start_point" in kwargs:
             self.start_point = kwargs.get("start_point")
-        if "end_point" in kwargs:    
+        if "end_point" in kwargs:
             self.end_point = kwargs.get("end_point")
 
         self.calculate_edge_vector()
@@ -23,7 +23,7 @@ class EdgeInfo:
             output = output + " | End point: " + str(self._end_point)
         if self._edge_vector is not None:
             output = output + " | Edge vector: " + str(self._edge_vector)
-        return  output
+        return output
 
     @property
     def start_point(self):
@@ -47,8 +47,6 @@ class EdgeInfo:
     def edge_vector(self):
         return self._edge_vector
 
-
     def calculate_edge_vector(self):
         if self._start_point is not None and self._end_point is not None:
             self._edge_vector = self._end_point - self._start_point
-    
