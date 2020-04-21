@@ -2,6 +2,7 @@ import sys
 
 from abc import ABC, abstractclassmethod
 from matplotlib import pyplot as plot
+from matplotlib import colors as mcolors
 import numpy as np
 
 from geometry_info.edge_info import EdgeInfo
@@ -155,15 +156,49 @@ class GeometryContour:
         return np.linalg.norm(vector_point_to_line)
 
     def get_closest_edge_to_point(self, point: np.array) -> EdgeInfo:
-        shortest_edge: EdgeInfo = self._edge_list[0]
-        shortest_distance: float = self.calculate_distance_point_to_line(point, shortest_edge.edge_vector, shortest_edge.start_point)
+        closest_edge: EdgeInfo = self._edge_list[0]
+        shortest_distance: float = self.calculate_distance_point_to_line(point, closest_edge.edge_vector, closest_edge.start_point)
         for edge_info in self._edge_list:
             new_distance: float = self.calculate_distance_point_to_line(point, edge_info.edge_vector, edge_info.start_point)
             if new_distance < shortest_distance:
-                shortest_edge = edge_info
+                closest_edge = edge_info
                 shortest_distance = new_distance
 
+        return closest_edge
+
+    def get_closest_distance_edge_to_point(self, point: np.array) -> float:
+        closest_edge: EdgeInfo = self.get_closest_edge_to_point(point)
+        return self.calculate_distance_point_to_line(point, closest_edge.edge_vector, closest_edge.start_point)
+
+    def get_longest_edge(self) -> EdgeInfo:
+        longest_edge: EdgeInfo = self._edge_list[0]  # initialize with first value in list
+        longest_edge_length: float = np.linalg.norm(longest_edge.edge_vector)
+        for edge in self._edge_list:
+            new_edge_length: float = np.linalg.norm(edge.edge_vector)
+            if new_edge_length > longest_edge_length:
+                longest_edge_length = new_edge_length
+                longest_edge = edge
+
+        return longest_edge
+
+    def get_longest_edge_length(self) -> float:
+        longest_edge: EdgeInfo = self.get_longest_edge()
+        return np.linalg.norm(longest_edge.edge_vector)
+
+    def get_shortest_edge(self) -> EdgeInfo:
+        shortest_edge: EdgeInfo = self._edge_list[0]
+        shortest_edge_length: float = np.linalg.norm(shortest_edge.edge_vector)
+        for edge in self._edge_list:
+            new_edge_length: float = np.linalg.norm(edge.edge_vector)
+            if new_edge_length < shortest_edge_length:
+                shortest_edge_length = new_edge_length
+                shortest_edge = edge
+
         return shortest_edge
+
+    def get_shortest_edge_length(self) -> float:
+        shortest_edge: EdgeInfo = self.get_shortest_edge()
+        return np.linalg.norm(shortest_edge.edge_vector)
 
     def extend_vector_by_length(self, vector_to_extend: np.array, length_to_extend: float) -> np.array:
         extended_vector: np.array
@@ -309,6 +344,7 @@ class GeometryContour:
 
     def plot_edges(self, **kwargs):
         block: bool = self.check_if_block_exists(**kwargs)
+        color: str = self.check_if_color_exists(**kwargs)
 
         for edge in self._edge_list:
             x_start: float = edge.start_point[0]
@@ -316,7 +352,7 @@ class GeometryContour:
             end_point: np.array = edge.start_point + edge.edge_vector
             x_end: float = end_point[0]
             y_end: float = end_point[1]
-            plot.plot([x_start, x_end], [y_start, y_end], 'r-')
+            plot.plot([x_start, x_end], [y_start, y_end], linestyle="-", color=color)
 
         plot.show(block=block)
 
@@ -340,6 +376,12 @@ class GeometryContour:
 
     def check_if_block_exists(self, **kwargs) -> bool:
         block: bool = False
-        if 'block' in kwargs:
+        if "block" in kwargs:
             block = kwargs.get("block")
         return block
+
+    def check_if_color_exists(self, **kwargs) -> str:
+        color: str = mcolors.CSS4_COLORS["red"]
+        if "color" in kwargs:
+            color = mcolors.CSS4_COLORS[str(kwargs.get("color"))]
+        return color
