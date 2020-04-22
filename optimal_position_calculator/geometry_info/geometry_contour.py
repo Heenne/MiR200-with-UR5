@@ -200,6 +200,14 @@ class GeometryContour:
         shortest_edge: EdgeInfo = self.get_shortest_edge()
         return np.linalg.norm(shortest_edge.edge_vector)
 
+    def calculate_contour_length(self) -> float:
+        total_length: float = 0.0
+        for edge in self._edge_list:
+            edge_length: float = np.linalg.norm(edge.edge_vector)
+            total_length += edge_length
+
+        return total_length
+
     def extend_vector_by_length(self, vector_to_extend: np.array, length_to_extend: float) -> np.array:
         extended_vector: np.array
         length_of_vector: float = np.linalg.norm(vector_to_extend)
