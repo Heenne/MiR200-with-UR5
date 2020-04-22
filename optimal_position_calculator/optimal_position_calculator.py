@@ -86,7 +86,7 @@ def calculate_fitness_of_grip_contour(grip_contour: GeometryContour, centroid_ob
     #     distance_to_centroid: float = grip_contour.calculate_distance_point_to_line(centroid_object_to_move, edge.edge_vector, edge.start_point)
     #     fitness += pow(distance_to_centroid, 2)
 
-    fitness = pow(grip_contour.get_shortest_edge_length(), 2)
+    fitness = pow(grip_contour.get_distance_closest_edge_to_point(centroid_object_to_move), 2)
 
     # Add additional fitness parameters here
 
@@ -102,24 +102,34 @@ def calculate_fitness_sum_of_grip_population(grip_contour_population: list, cent
     return fitness_sum
 
 
-def mutate_geometry_contour(contour_to_mutate: GeometryContour, min_mutation: float, max_mutation: float) -> GeometryContour:
+def mutate_geometry_contour(contour_to_mutate: GeometryContour, min_mutation: float, max_mutation: float, border_contour: GeometryContour) -> GeometryContour:
     index_of_mutated_corner: int = random.randrange(0, len(contour_to_mutate.corner_point_list))
-    is_additive_mutation_x: bool = bool(random.getrandbits(1))
-    is_additive_mutation_y: bool = bool(random.getrandbits(1))
-    mutation_value_x: float = random.uniform(min_mutation, max_mutation)
-    mutation_value_y: float = random.uniform(min_mutation, max_mutation)
 
-    if is_additive_mutation_x:
-        contour_to_mutate.corner_point_list[index_of_mutated_corner][0] += mutation_value_x
-    else:
-        contour_to_mutate.corner_point_list[index_of_mutated_corner][0] -= mutation_value_x
+    corner_was_replaced: bool = False
 
-    if is_additive_mutation_y:
-        contour_to_mutate.corner_point_list[index_of_mutated_corner][1] += mutation_value_y
-    else:
-        contour_to_mutate.corner_point_list[index_of_mutated_corner][1] -= mutation_value_y
+    while(not corner_was_replaced):
+        corner_to_mutate: np.array = contour_to_mutate.corner_point_list[index_of_mutated_corner].copy()
 
-    plot.plot(contour_to_mutate.corner_point_list[index_of_mutated_corner][0], contour_to_mutate.corner_point_list[index_of_mutated_corner][1], color=mcolors.CSS4_COLORS["pink"], marker="o")
+        is_additive_mutation_x: bool = bool(random.getrandbits(1))
+        is_additive_mutation_y: bool = bool(random.getrandbits(1))
+        mutation_value_x: float = random.uniform(min_mutation, max_mutation)
+        mutation_value_y: float = random.uniform(min_mutation, max_mutation)
+
+        if is_additive_mutation_x:
+            corner_to_mutate[0] += mutation_value_x
+        else:
+            corner_to_mutate[0] -= mutation_value_x
+
+        if is_additive_mutation_y:
+            corner_to_mutate[1] += mutation_value_y
+        else:
+            corner_to_mutate[1] -= mutation_value_y
+
+        if border_contour.is_point_in_contour(corner_to_mutate):
+            contour_to_mutate.replace_contour_corner(index_of_mutated_corner, corner_to_mutate)
+            corner_was_replaced = True
+
+    # plot.plot(contour_to_mutate.corner_point_list[index_of_mutated_corner][0], contour_to_mutate.corner_point_list[index_of_mutated_corner][1], color=mcolors.CSS4_COLORS["pink"], marker="o")
 
     return contour_to_mutate
 
@@ -166,24 +176,23 @@ if __name__ == '__main__':
     # grid_point_list = create_grid(grip_area) Not needed anymore because switching from grid to steps
 
     centroid_object_to_move: np.array = object_to_move.calculate_centroid()
+    plot.plot(centroid_object_to_move[0], centroid_object_to_move[1], "go")
 
-    MAX_POPULATION: int = 50  # Dont specify odd amounts, allways even!
+    MAX_POPULATION: int = 30  # Dont specify odd amounts, allways even!
 
-    MAX_STEP_SIZE: float = round((grip_area.get_longest_edge_length()/100), 3)
-    MIN_STEP_SIZE: float = MAX_STEP_SIZE / 1
+    MAX_STEP_SIZE: float = round((grip_area.get_longest_edge_length()/5), 3)
+    MIN_STEP_SIZE: float = MAX_STEP_SIZE / 50
+    print("max step size: " + str(MAX_STEP_SIZE) + " | min step size: " + str(MIN_STEP_SIZE))
 
-    grip_contour_population: list = init_grip_contour_population(MAX_POPULATION, centroid_object_to_move, grip_area.get_closest_distance_edge_to_point(centroid_object_to_move), NUMBER_OF_ROBOTS)
+    grip_contour_population: list = init_grip_contour_population(MAX_POPULATION, centroid_object_to_move, grip_area.get_distance_closest_edge_to_point(centroid_object_to_move), NUMBER_OF_ROBOTS)
 
-    for cylce_counter in range(0, 40):
+    for cylce_counter in range(0, 100):
         fitness_sum: float = calculate_fitness_sum_of_grip_population(grip_contour_population, centroid_object_to_move)
 
         mating_pool: list = list()
         for grip_contour in grip_contour_population:
-            # grip_contour.plot_corners()
-            # grip_contour.plot_edges()
-            # grip_contour.print_info()
-
-            mating_pool_instances: int = int(round((calculate_fitness_of_grip_contour(grip_contour, centroid_object_to_move)/fitness_sum) * 10, 0))
+            mating_pool_chance: float = calculate_fitness_of_grip_contour(grip_contour, centroid_object_to_move)/fitness_sum
+            mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
             for counter in range(0, mating_pool_instances):
                 mating_pool.append(grip_contour)
 
@@ -191,8 +200,8 @@ if __name__ == '__main__':
         while len(mating_pool) < len(grip_contour_population):
             mating_pool.append(grip_contour_population[random.randrange(0, len(grip_contour_population))])
 
-        next_gen: list = list()
         # Crossover of parents
+        next_gen: list = list()
         while len(mating_pool) > 1:
             first_parent_index: int = random.randrange(0, len(mating_pool))
             first_parent: GeometryContour = mating_pool.pop(first_parent_index)
@@ -213,19 +222,17 @@ if __name__ == '__main__':
                 first_child.add_contour_corner(second_parent.corner_point_list[counter])
                 second_child.add_contour_corner(first_parent.corner_point_list[counter])
 
-            first_child_mutation_chance: int = random.randrange(0, 100)
-            second_child_mutation_chance: int = random.randrange(0, 100)
-
-            if first_child_mutation_chance >= 30:
-                first_child = mutate_geometry_contour(first_child, MIN_STEP_SIZE, MAX_STEP_SIZE)
-                first_child.create_contour_edges()
-
-            if second_child_mutation_chance >= 30:
-                second_child = mutate_geometry_contour(second_child, MIN_STEP_SIZE, MAX_STEP_SIZE)
-                first_child.create_contour_edges()
-
             next_gen.append(first_child)
             next_gen.append(second_child)
+
+        # Mutation
+        MUTATION_CHANCE: float = 0.6
+
+        for child in next_gen:
+            child_mutation_chance: float = random.random()
+
+            if child_mutation_chance < MUTATION_CHANCE:  # Mutation
+                child = mutate_geometry_contour(child, MIN_STEP_SIZE, MAX_STEP_SIZE, grip_area)
 
         # Survivor selection
         total_population: dict = dict()
@@ -246,7 +253,14 @@ if __name__ == '__main__':
     for contour in grip_contour_population:
         contour.create_contour_edges()
         contour.plot_edges()
-        contour.print_info()
+        print(calculate_fitness_of_grip_contour(contour, centroid_object_to_move))
+
+    # region Old code
+        # plot.plot(centroid_object_to_move[0], centroid_object_to_move[1], "go")
+
+        # axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
+        # axis.axis("equal")
+        # plot.show()  # Let this be the last command so the plots wont be closed instantly
 
     # for contour in next_population:
     #     contour.plot_edges(color="green")
@@ -335,6 +349,7 @@ if __name__ == '__main__':
 
     # optimized_grip_contour.plot_corners()
     # optimized_grip_contour.plot_edges()
+    # endregion
 
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
 

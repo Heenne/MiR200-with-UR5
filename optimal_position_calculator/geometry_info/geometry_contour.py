@@ -166,7 +166,7 @@ class GeometryContour:
 
         return closest_edge
 
-    def get_closest_distance_edge_to_point(self, point: np.array) -> float:
+    def get_distance_closest_edge_to_point(self, point: np.array) -> float:
         closest_edge: EdgeInfo = self.get_closest_edge_to_point(point)
         return self.calculate_distance_point_to_line(point, closest_edge.edge_vector, closest_edge.start_point)
 
