@@ -32,6 +32,7 @@ class URDFReader:
             self.size_info = self._xml_root_node.find("link").find("collision").find("geometry").find("box").get("size")
         elif self.geometry_type == GeometryType.Cylinder:
             self.size_info = self._xml_root_node.find("link").find("collision").find("geometry").find("cylinder").get("radius")
+            self.size_info = self.size_info + " " + self._xml_root_node.find("link").find("collision").find("geometry").find("cylinder").get("length")
         elif self.geometry_type == GeometryType.IsoscelesTriangle:
             self.size_info = self._xml_root_node.find("link").find("collision").find("geometry").find("mesh").get("scale")
         elif self.geometry_type == GeometryType.RightAngledTriangle:

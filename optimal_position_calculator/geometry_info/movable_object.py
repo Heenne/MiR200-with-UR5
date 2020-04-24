@@ -57,7 +57,7 @@ class Box(MovableObject):
 
 
 class Cylinder(MovableObject):
-    __RESOLUTION: int = 100
+    __RESOLUTION: int = 30
     _radius: float
 
     def __init__(self):
