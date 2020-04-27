@@ -40,7 +40,8 @@ def create_grid(contour: GeometryContour) -> list:
     y_min_area: float = contour.get_y_min()
 
     grid_point_list: list = list()
-    x_list: np.array = np.arange(x_min_area, x_max_area, 0.1)  # Change to linspace and calculate how many points I want? Should be better as Internet tells
+    # Change to linspace instead of arange? and calculate how many points I want? Should be better as Internet tells
+    x_list: np.array = np.arange(x_min_area, x_max_area, 0.1)
     y_list: np.array = np.arange(y_min_area, y_max_area, 0.1)
     for x_counter in x_list:
         for y_counter in y_list:
@@ -51,25 +52,35 @@ def create_grid(contour: GeometryContour) -> list:
     return grid_point_list
 
 
-def init_grip_point_contour(centroid: np.array, max_distance_from_centroid: float, number_of_robots: int) -> GeometryContour:
+def init_grip_point_contour(centroid: np.array,
+                            max_distance_from_centroid: float,
+                            number_of_robots: int) -> GeometryContour:
     grip_point_contour: GeometryContour = GeometryContour()
 
-    offset_rotation: float = random.uniform((pi/180), pi)  # Random offset from 0 degree (right side) in mathematical positive direction. Range from 1°-180°
+    # Random offset from 0 degree (right side) in mathematical positive direction. Range from 1°-180°
+    offset_rotation: float = random.uniform((pi/180), pi)
     angle_diff_between_robot: float = (2*pi) / (NUMBER_OF_ROBOTS)
 
     for counter in range(0, number_of_robots):
         distance_from_centroid: float = random.uniform(0.01, max_distance_from_centroid)
-        grip_point: np.array = np.array([distance_from_centroid * cos((angle_diff_between_robot * counter) + offset_rotation),
-                                         distance_from_centroid * sin((angle_diff_between_robot * counter) + offset_rotation)])
+        grip_point: np.array = np.array(
+            [distance_from_centroid * cos((angle_diff_between_robot * counter) + offset_rotation),
+             distance_from_centroid * sin((angle_diff_between_robot * counter) + offset_rotation)])
+
         grip_point_contour.add_contour_corner(grip_point)
 
     return grip_point_contour
 
 
-def init_grip_contour_population(max_population: int, centroid: np.array, max_distance_from_centroid: float, number_of_robots: int) -> list:
+def init_grip_contour_population(max_population: int,
+                                 centroid: np.array,
+                                 max_distance_from_centroid: float,
+                                 number_of_robots: int) -> list:
     grip_contour_population: list = list()
     for counter in range(0, max_population):
-        new_grip_contour: GeometryContour = init_grip_point_contour(centroid, max_distance_from_centroid, number_of_robots)
+        new_grip_contour: GeometryContour = init_grip_point_contour(centroid,
+                                                                    max_distance_from_centroid,
+                                                                    number_of_robots)
         grip_contour_population.append(new_grip_contour)
 
     return grip_contour_population
@@ -83,7 +94,9 @@ def calculate_fitness_of_grip_contour(grip_contour: GeometryContour, centroid_ob
         return fitness
 
     # for edge in grip_contour.edge_list:
-    #     distance_to_centroid: float = grip_contour.calculate_distance_point_to_line(centroid_object_to_move, edge.edge_vector, edge.start_point)
+    #     distance_to_centroid: float = grip_contour.calculate_distance_point_to_line(centroid_object_to_move,
+    #                                                                                 edge.edge_vector,
+    #                                                                                 edge.start_point)
     #     fitness += pow(distance_to_centroid, 2)
 
     fitness = pow(grip_contour.get_distance_closest_edge_to_point(centroid_object_to_move), 2)
@@ -119,7 +132,10 @@ def calculate_fitness_sum_of_ur5_base_population(ur5_base_contour_population: li
     return fitness_sum
 
 
-def mutate_geometry_contour(contour_to_mutate: GeometryContour, min_mutation: float, max_mutation: float, border_contour: GeometryContour) -> GeometryContour:
+def mutate_geometry_contour(contour_to_mutate: GeometryContour,
+                            min_mutation: float,
+                            max_mutation: float,
+                            border_contour: GeometryContour) -> GeometryContour:
     """[summary]
 
     :param contour_to_mutate: [description]
@@ -159,7 +175,10 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour, min_mutation: fl
             contour_to_mutate.replace_contour_corner(index_of_mutated_corner, corner_to_mutate)
             corner_was_replaced = True
 
-    # plot.plot(contour_to_mutate.corner_point_list[index_of_mutated_corner][0], contour_to_mutate.corner_point_list[index_of_mutated_corner][1], color=mcolors.CSS4_COLORS["pink"], marker="o")
+    # plot.plot(contour_to_mutate.corner_point_list[index_of_mutated_corner][0],
+    #           contour_to_mutate.corner_point_list[index_of_mutated_corner][1],
+    #           color=mcolors.CSS4_COLORS["pink"],
+    #           marker="o")
 
     return contour_to_mutate
 
@@ -215,7 +234,8 @@ def mutate_geometry_contour_with_dead_zones(contour_to_mutate: GeometryContour,
                 corner_not_in_deadzone = False
                 break
 
-        if outside_border_list[index_of_mutated_corner].is_point_in_contour(corner_to_mutate) and corner_not_in_deadzone:
+        if (outside_border_list[index_of_mutated_corner].is_point_in_contour(corner_to_mutate) and
+                corner_not_in_deadzone):
             contour_to_mutate.replace_contour_corner(index_of_mutated_corner, corner_to_mutate)
             corner_was_replaced = True
 
@@ -227,13 +247,20 @@ def create_circle_contour(centre_point: np.array, radius: float) -> GeometryCont
     circle_contour: GeometryContour = GeometryContour()
 
     for counter in range(0, resolution):
-        pose: np.array = np.array([centre_point[0] + radius * cos(((2 * pi) / resolution) * counter), centre_point[1] + radius * sin(((2 * pi) / resolution) * counter)])
+        pose: np.array = np.array([centre_point[0] + radius * cos(((2 * pi) / resolution) * counter),
+                                   centre_point[1] + radius * sin(((2 * pi) / resolution) * counter)])
         circle_contour.add_contour_corner(pose)
 
     return circle_contour
 
 
 if __name__ == '__main__':
+
+    vector: np.array = np.array([1, 1, 1])
+    matrix: np.array = np.array([[1, 0, 2], [0, 1, 2], [0, 0, 1]])
+    result: np.array = matrix.dot(vector)
+    print(result)
+
     script_dir = os.path.dirname(__file__)
     urdf_file_path = os.path.join(script_dir, '../urdf_form_creator/urdf/basic_geometry.urdf')
     urdf_reader: URDFReader = URDFReader(urdf_file_path)
@@ -286,7 +313,11 @@ if __name__ == '__main__':
     MIN_STEP_SIZE: float = MAX_STEP_SIZE / 50
     print("max step size: " + str(MAX_STEP_SIZE) + " | min step size: " + str(MIN_STEP_SIZE))
 
-    grip_contour_population: list = init_grip_contour_population(MAX_POPULATION, centroid_object_to_move, grip_area.get_distance_closest_edge_to_point(centroid_object_to_move), NUMBER_OF_ROBOTS)
+    grip_contour_population: list = init_grip_contour_population(MAX_POPULATION,
+                                                                 centroid_object_to_move,
+                                                                 grip_area.get_distance_closest_edge_to_point(
+                                                                     centroid_object_to_move),
+                                                                 NUMBER_OF_ROBOTS)
 
     for cylce_counter in range(0, 100):
         # Create mating pool
@@ -294,7 +325,8 @@ if __name__ == '__main__':
 
         mating_pool: list = list()
         for grip_contour in grip_contour_population:
-            mating_pool_chance: float = calculate_fitness_of_grip_contour(grip_contour, centroid_object_to_move)/fitness_sum
+            contour_fitness: float = calculate_fitness_of_grip_contour(grip_contour, centroid_object_to_move)
+            mating_pool_chance: float = contour_fitness / fitness_sum
             mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
             for counter in range(0, mating_pool_instances):
                 mating_pool.append(grip_contour)
@@ -311,7 +343,8 @@ if __name__ == '__main__':
             second_parent_index: int = random.randrange(0, len(mating_pool))
             second_parent: GeometryContour = mating_pool.pop(second_parent_index)
 
-            # Point for splitting the corners and giving them to the children. At least split between 1 and 2 or n-1 and n so at least one point will be separatd
+            # Point for splitting the corners and giving them to the children.
+            # At least split between 1 and 2 or n-1 and n so at least one point will be separatd
             gene_crossover_point: int = random.randrange(1, (len(first_parent.corner_point_list)-1))
 
             first_child: GeometryContour = GeometryContour()
@@ -379,7 +412,8 @@ if __name__ == '__main__':
                 x_pose = random.uniform(posible_ur5_base_link_pose.get_x_min(), posible_ur5_base_link_pose.get_x_max())
                 y_pose = random.uniform(posible_ur5_base_link_pose.get_y_min(), posible_ur5_base_link_pose.get_y_max())
                 pose_to_check: np.array = np.array([x_pose, y_pose])
-                if posible_ur5_base_link_pose.is_point_in_contour(pose_to_check) and not extended_object_contour.is_point_in_contour(pose_to_check):
+                if (posible_ur5_base_link_pose.is_point_in_contour(pose_to_check) and not
+                        extended_object_contour.is_point_in_contour(pose_to_check)):
                     ur5_base_link_pose_contour.add_contour_corner(pose_to_check)
                     point_valid = True
         ur5_base_link_population.append(ur5_base_link_pose_contour)
@@ -390,7 +424,8 @@ if __name__ == '__main__':
 
         mating_pool: list = list()
         for ur5_base_link_contour in ur5_base_link_population:
-            mating_pool_chance: float = calculate_fitness_of_ur5_base_contour(ur5_base_link_contour) / ur5_base_fitness_sum
+            contour_fitness: float = calculate_fitness_of_ur5_base_contour(ur5_base_link_contour)
+            mating_pool_chance: float = contour_fitness / ur5_base_fitness_sum
             mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
             for pool_instance_counter in range(0, mating_pool_instances):
                 mating_pool.append(ur5_base_link_contour)
@@ -405,7 +440,8 @@ if __name__ == '__main__':
             second_parent_index: int = random.randrange(0, len(mating_pool))
             second_parent: GeometryContour = mating_pool.pop(second_parent_index)
 
-            # Point for splitting the corners and giving them to the children. At least split between 1 and 2 or n-1 and n so at least one point will be separatd
+            # Point for splitting the corners and giving them to the children.
+            # At least split between 1 and 2 or n-1 and n so at least one point will be separatd
             gene_crossover_point: int = random.randrange(1, (len(first_parent.corner_point_list)-1))
 
             first_child: GeometryContour = GeometryContour()
@@ -465,6 +501,12 @@ if __name__ == '__main__':
 
     best_grip_contour: GeometryContour = total_population[0][0]
     best_grip_contour.plot_edges(color="green")
+
+    mir_contour: GeometryContour = GeometryContour()
+    mir_contour.add_contour_corner(np.array([447.5, 291]))
+    mir_contour.add_contour_corner(np.array([-447.5, 291]))
+    mir_contour.add_contour_corner(np.array([-447.5, -291]))
+    mir_contour.add_contour_corner(np.array([447.5, -291]))
 
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
 
