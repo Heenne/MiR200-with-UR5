@@ -7,11 +7,9 @@ class EdgeInfo:
     _end_point: np.array = None
     _edge_vector: np.array = None
 
-    def __init__(self, **kwargs):
-        if "start_point" in kwargs:
-            self.start_point = kwargs.get("start_point")
-        if "end_point" in kwargs:
-            self.end_point = kwargs.get("end_point")
+    def __init__(self, start_point=None, end_point=None):
+        self._start_point = start_point
+        self._end_point = end_point
 
         self.calculate_edge_vector()
 

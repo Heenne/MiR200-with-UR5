@@ -15,8 +15,9 @@ class MovableObject(GeometryContour):
     mass: float
     height: float
 
-    def __init__(self, geometric_centroid_world_cs: np.array = np.array([0, 0]), rotation_radian: float = 0.0):
-        super().__init__(geometric_centroid_world_cs=geometric_centroid_world_cs, rotation_radian=rotation_radian)
+    def __init__(self, lead_vector_world_cs: np.array = np.array([0, 0]), world_to_geometry_cs_rotation: float = 0.0):
+        super().__init__(lead_vector_world_cs=lead_vector_world_cs,
+                         world_to_geometry_cs_rotation=world_to_geometry_cs_rotation)
 
     def import_urdf_info(self, **kwargs):
         """Import urdf info in the current class.
@@ -43,11 +44,19 @@ class Box(MovableObject):
     _x_length: float
     _y_length: float
 
-    def __init__(self, geometric_centroid_world_cs: np.array = np.array([0, 0]), rotation_radian: float = 0.0):
-        super().__init__(geometric_centroid_world_cs=geometric_centroid_world_cs, rotation_radian=rotation_radian)
+    def __init__(self, lead_vector_world_cs: np.array = np.array([0, 0]), world_to_geometry_cs_rotation: float = 0.0):
+        """BLABLA
+
+        :param lead_vector_world_cs: [description], defaults to np.array([0, 0])
+        :type lead_vector_world_cs: np.array, optional
+        :param world_to_geometry_cs_rotation: [description], defaults to 0.0
+        :type world_to_geometry_cs_rotation: float, optional
+        """
+        super().__init__(lead_vector_world_cs=lead_vector_world_cs,
+                         world_to_geometry_cs_rotation=world_to_geometry_cs_rotation)
 
     def import_urdf_info(self, **kwargs):
-        super().import_urdf_info()
+        super().import_urdf_info(**kwargs)
         self._x_length: float = float(kwargs.get("x_length"))
         self._y_length: float = float(kwargs.get("y_length"))
 
@@ -59,10 +68,10 @@ class Box(MovableObject):
         point3_geometry_cs: np.array = np.array([-half_x_length, -half_y_length])
         point4_geometry_cs: np.array = np.array([half_x_length, -half_y_length])
 
-        self._corner_point_geometry_cs_list.append(point1_geometry_cs)
-        self._corner_point_geometry_cs_list.append(point2_geometry_cs)
-        self._corner_point_geometry_cs_list.append(point3_geometry_cs)
-        self._corner_point_geometry_cs_list.append(point4_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point1_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point2_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point3_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point4_geometry_cs)
 
         self.create_contour_edges()
 
@@ -71,8 +80,9 @@ class Cylinder(MovableObject):
     __RESOLUTION: int = 30
     _radius: float
 
-    def __init__(self, geometric_centroid_world_cs: np.array = np.array([0, 0]), rotation_radian: float = 0.0):
-        super().__init__(geometric_centroid_world_cs=geometric_centroid_world_cs, rotation_radian=rotation_radian)
+    def __init__(self, lead_vector_world_cs: np.array = np.array([0, 0]), world_to_geometry_cs_rotation: float = 0.0):
+        super().__init__(lead_vector_world_cs=lead_vector_world_cs,
+                         world_to_geometry_cs_rotation=world_to_geometry_cs_rotation)
 
     def import_urdf_info(self, **kwargs):
         super().import_urdf_info(**kwargs)
@@ -83,7 +93,7 @@ class Cylinder(MovableObject):
             y_value = self._radius * sin(((2*pi)/self.__RESOLUTION) * counter)
 
             point_geometry_cs = np.array([x_value, y_value])
-            self._corner_point_geometry_cs_list.append(point_geometry_cs)
+            self._corner_point_list_geometry_cs.append(point_geometry_cs)
 
         self.create_contour_edges()
 
@@ -93,8 +103,9 @@ class IsoscelesTriangle(MovableObject):
     _scaled_side_length: float
     _scale_factor: float
 
-    def __init__(self, geometric_centroid_world_cs: np.array = np.array([0, 0]), rotation_radian: float = 0.0):
-        super().__init__(geometric_centroid_world_cs=geometric_centroid_world_cs, rotation_radian=rotation_radian)
+    def __init__(self, lead_vector_world_cs: np.array = np.array([0, 0]), world_to_geometry_cs_rotation: float = 0.0):
+        super().__init__(lead_vector_world_cs=lead_vector_world_cs,
+                         world_to_geometry_cs_rotation=world_to_geometry_cs_rotation)
 
     def import_urdf_info(self, **kwargs):
         super().import_urdf_info(**kwargs)
@@ -107,9 +118,9 @@ class IsoscelesTriangle(MovableObject):
         point2_geometry_cs: np.array = np.array([0, ((2*scaled_height) / 3)])
         point3_geometry_cs: np.array = np.array([(-self._scaled_side_length / 2), (-scaled_height / 3)])
 
-        self._corner_point_geometry_cs_list.append(point1_geometry_cs)
-        self._corner_point_geometry_cs_list.append(point2_geometry_cs)
-        self._corner_point_geometry_cs_list.append(point3_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point1_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point2_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point3_geometry_cs)
 
         self.create_contour_edges()
 
@@ -128,8 +139,9 @@ class RightAngledTriangle(MovableObject):
     _scaled_x_side_length: float
     _scaled_y_side_length: float
 
-    def __init__(self, geometric_centroid_world_cs: np.array = np.array([0, 0]), rotation_radian: float = 0.0):
-        super().__init__(geometric_centroid_world_cs=geometric_centroid_world_cs, rotation_radian=rotation_radian)
+    def __init__(self, lead_vector_world_cs: np.array = np.array([0, 0]), world_to_geometry_cs_rotation: float = 0.0):
+        super().__init__(lead_vector_world_cs=lead_vector_world_cs,
+                         world_to_geometry_cs_rotation=world_to_geometry_cs_rotation)
 
     def import_urdf_info(self, **kwargs):
         super().import_urdf_info(**kwargs)
@@ -146,8 +158,8 @@ class RightAngledTriangle(MovableObject):
         point3_geometry_cs: np.array = np.array([(-self._scaled_x_side_length / 3),
                                                  (-self._scaled_y_side_length / 3)])
 
-        self._corner_point_geometry_cs_list.append(point1_geometry_cs)
-        self._corner_point_geometry_cs_list.append(point2_geometry_cs)
-        self._corner_point_geometry_cs_list.append(point3_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point1_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point2_geometry_cs)
+        self._corner_point_list_geometry_cs.append(point3_geometry_cs)
 
         self.create_contour_edges()
