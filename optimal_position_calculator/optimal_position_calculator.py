@@ -34,52 +34,35 @@ def plot_contour_info(object_to_move, extended_object_contour, grip_area):
     grip_area.plot_edges(block=False)
 
 
-def create_grid(contour: GeometryContour) -> list:
-    x_max_area: float = contour.get_x_max()
-    x_min_area: float = contour.get_x_min()
-    y_max_area: float = contour.get_y_max()
-    y_min_area: float = contour.get_y_min()
-
-    grid_point_list: list = list()
-    # Change to linspace instead of arange? and calculate how many points I want? Should be better as Internet tells
-    x_list: np.array = np.arange(x_min_area, x_max_area, 0.1)
-    y_list: np.array = np.arange(y_min_area, y_max_area, 0.1)
-    for x_counter in x_list:
-        for y_counter in y_list:
-            grid_point: np.array = np.array([x_counter, y_counter])
-            if contour.is_point_in_contour(grid_point):
-                grid_point_list.append(grid_point)
-
-    return grid_point_list
-
-
-def init_grip_point_contour(centroid: np.array,
+def init_grip_point_contour(lead_vector_world_cs: np.array,
                             max_distance_from_centroid: float,
                             number_of_robots: int) -> GeometryContour:
     grip_point_contour: GeometryContour = GeometryContour()
 
     # Random offset from 0 degree (right side) in mathematical positive direction. Range from 1°-180°
     offset_rotation: float = random.uniform((pi/180), pi)
-    angle_diff_between_robot: float = (2*pi) / (NUMBER_OF_ROBOTS)
+    angle_diff_between_robot: float = (2*pi) / NUMBER_OF_ROBOTS
 
     for counter in range(0, number_of_robots):
         distance_from_centroid: float = random.uniform(0.01, max_distance_from_centroid)
-        grip_point: np.array = np.array(
-            [distance_from_centroid * cos((angle_diff_between_robot * counter) + offset_rotation),
-             distance_from_centroid * sin((angle_diff_between_robot * counter) + offset_rotation)])
+        grip_point_world_cs: np.array = np.array(
+            [lead_vector_world_cs[0] + distance_from_centroid *
+             cos((angle_diff_between_robot * counter) + offset_rotation),
+             lead_vector_world_cs[1] + distance_from_centroid *
+             sin((angle_diff_between_robot * counter) + offset_rotation)])
 
-        grip_point_contour.add_contour_corner(grip_point)
+        grip_point_contour.add_contour_corner_world_cs(grip_point_world_cs)
 
     return grip_point_contour
 
 
 def init_grip_contour_population(max_population: int,
-                                 centroid: np.array,
+                                 lead_vector: np.array,
                                  max_distance_from_centroid: float,
                                  number_of_robots: int) -> list:
     grip_contour_population: list = list()
     for counter in range(0, max_population):
-        new_grip_contour: GeometryContour = init_grip_point_contour(centroid,
+        new_grip_contour: GeometryContour = init_grip_point_contour(lead_vector,
                                                                     max_distance_from_centroid,
                                                                     number_of_robots)
         grip_contour_population.append(new_grip_contour)
@@ -87,11 +70,12 @@ def init_grip_contour_population(max_population: int,
     return grip_contour_population
 
 
-def calculate_fitness_of_grip_contour(grip_contour: GeometryContour, centroid_object_to_move: np.array) -> float:
+def calculate_fitness_of_grip_contour(grip_contour: GeometryContour,
+                                      centroid_object_to_move_world_cs: np.array) -> float:
     fitness: float = 0.0
-    if not grip_contour.is_point_in_contour(centroid_object_to_move):
+    if not grip_contour.is_world_cs_point_in_contour(centroid_object_to_move_world_cs):
         return fitness
-    if grip_contour.do_edges_intersect():
+    if grip_contour.do_contour_edges_intersect():
         return fitness
 
     # for edge in grip_contour.edge_list:
@@ -99,8 +83,7 @@ def calculate_fitness_of_grip_contour(grip_contour: GeometryContour, centroid_ob
     #                                                                                 edge.edge_vector,
     #                                                                                 edge.start_point)
     #     fitness += pow(distance_to_centroid, 2)
-
-    fitness = pow(grip_contour.get_distance_closest_edge_to_point(centroid_object_to_move), 2)
+    fitness = pow(grip_contour.calc_distance_closest_edge_to_point(centroid_object_to_move_world_cs), 2)
 
     # Add additional fitness parameters here
 
@@ -150,12 +133,13 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
     :return: [description]
     :rtype: GeometryContour
     """
-    index_of_mutated_corner: int = random.randrange(0, len(contour_to_mutate.corner_point_list))
+    index_of_mutated_corner: int = random.randrange(0, len(contour_to_mutate.corner_point_list_geometry_cs))
 
     corner_was_replaced: bool = False
 
-    while(not corner_was_replaced):
-        corner_to_mutate: np.array = contour_to_mutate.corner_point_list[index_of_mutated_corner].copy()
+    while not corner_was_replaced:
+        corner_to_mutate_geometry_cs: np.array = \
+            contour_to_mutate.corner_point_list_geometry_cs[index_of_mutated_corner].copy()
 
         is_additive_mutation_x: bool = bool(random.getrandbits(1))
         is_additive_mutation_y: bool = bool(random.getrandbits(1))
@@ -163,17 +147,17 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
         mutation_value_y: float = random.uniform(min_mutation, max_mutation)
 
         if is_additive_mutation_x:
-            corner_to_mutate[0] += mutation_value_x
+            corner_to_mutate_geometry_cs[0] += mutation_value_x
         else:
-            corner_to_mutate[0] -= mutation_value_x
+            corner_to_mutate_geometry_cs[0] -= mutation_value_x
 
         if is_additive_mutation_y:
-            corner_to_mutate[1] += mutation_value_y
+            corner_to_mutate_geometry_cs[1] += mutation_value_y
         else:
-            corner_to_mutate[1] -= mutation_value_y
+            corner_to_mutate_geometry_cs[1] -= mutation_value_y
 
-        if border_contour.is_point_in_contour(corner_to_mutate):
-            contour_to_mutate.replace_contour_corner(index_of_mutated_corner, corner_to_mutate)
+        if border_contour.is_geometry_cs_point_in_contour(corner_to_mutate_geometry_cs):
+            contour_to_mutate.replace_contour_corner_geometry_cs(index_of_mutated_corner, corner_to_mutate_geometry_cs)
             corner_was_replaced = True
 
     # plot.plot(contour_to_mutate.corner_point_list[index_of_mutated_corner][0],
@@ -187,9 +171,11 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
 def mutate_geometry_contour_with_dead_zones(contour_to_mutate: GeometryContour,
                                             min_mutation_distance: float,
                                             max_mutation_distance: float,
-                                            outside_border_list: GeometryContour,
+                                            outside_border_list: list,
                                             deadzone_list: list = list()) -> GeometryContour:
-    """Method for the mutation of corner-point of a contour
+    """Method for the mutation of corner-point of a contour.
+    But this time each corner has its individual outside_border and there are multiple deadzones where
+    no corner is allowed to be.
     The decision if the mutation happens was allready decided before calling this function
 
     :param contour_to_mutate: [description]
@@ -198,19 +184,19 @@ def mutate_geometry_contour_with_dead_zones(contour_to_mutate: GeometryContour,
     :type min_mutation_distance: float
     :param max_mutation_distance: [description]
     :type max_mutation_distance: float
-    :param outside_border_contour: [description]
-    :type outside_border_contour: GeometryContour
+    :param outside_border_list: [description]
+    :type outside_border_list: GeometryContour
     :param deadzone_list: [description], defaults to list()
     :type deadzone_list: list, optional
     :return: [description]
     :rtype: GeometryContour
     """
-    index_of_mutated_corner: int = random.randrange(0, len(contour_to_mutate.corner_point_list))
+    index_of_mutated_corner: int = random.randrange(0, len(contour_to_mutate.corner_point_list_geometry_cs))
 
     corner_was_replaced: bool = False
 
-    while(not corner_was_replaced):
-        corner_to_mutate: np.array = contour_to_mutate.corner_point_list[index_of_mutated_corner].copy()
+    while not corner_was_replaced:
+        corner_to_mutate_geometry_cs: np.array = contour_to_mutate.corner_point_list_geometry_cs[index_of_mutated_corner].copy()
 
         is_additive_mutation_x: bool = bool(random.getrandbits(1))
         is_additive_mutation_y: bool = bool(random.getrandbits(1))
@@ -218,25 +204,25 @@ def mutate_geometry_contour_with_dead_zones(contour_to_mutate: GeometryContour,
         mutation_value_y: float = random.uniform(min_mutation_distance, max_mutation_distance)
 
         if is_additive_mutation_x:
-            corner_to_mutate[0] += mutation_value_x
+            corner_to_mutate_geometry_cs[0] += mutation_value_x
         else:
-            corner_to_mutate[0] -= mutation_value_x
+            corner_to_mutate_geometry_cs[0] -= mutation_value_x
 
         if is_additive_mutation_y:
-            corner_to_mutate[1] += mutation_value_y
+            corner_to_mutate_geometry_cs[1] += mutation_value_y
         else:
-            corner_to_mutate[1] -= mutation_value_y
+            corner_to_mutate_geometry_cs[1] -= mutation_value_y
 
         # Check if the mutated corner point is in one of the listed deadzones
         corner_not_in_deadzone: bool = True
         for deadzone in deadzone_list:
-            if deadzone.is_point_in_contour(corner_to_mutate):
+            if deadzone.is_geometry_cs_point_in_contour(corner_to_mutate_geometry_cs):
                 corner_not_in_deadzone = False
                 break
 
-        if (outside_border_list[index_of_mutated_corner].is_point_in_contour(corner_to_mutate) and
+        if (outside_border_list[index_of_mutated_corner].is_point_in_contour(corner_to_mutate_geometry_cs) and
                 corner_not_in_deadzone):
-            contour_to_mutate.replace_contour_corner(index_of_mutated_corner, corner_to_mutate)
+            contour_to_mutate.replace_contour_corner(index_of_mutated_corner, corner_to_mutate_geometry_cs)
             corner_was_replaced = True
 
     return contour_to_mutate
@@ -303,8 +289,6 @@ if __name__ == '__main__':
     # Contour where the gripper tip must be inside
     grip_area: GeometryContour = GeometryContour()
     grip_area.import_contour_with_offset(object_to_move, -0.1)
-
-    # grid_point_list = create_grid(grip_area) Not needed anymore because switching from grid to steps
 
     # centroid_object_to_move: np.array = object_to_move.calculate_centroid()
     # plot.plot(centroid_object_to_move[0], centroid_object_to_move[1], "go")

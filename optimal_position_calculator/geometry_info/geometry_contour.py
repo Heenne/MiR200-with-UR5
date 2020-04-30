@@ -1,10 +1,7 @@
-import sys
-
-from abc import ABC, abstractclassmethod
 from matplotlib import pyplot as plot
 from matplotlib import colors as mcolors
 import numpy as np
-from math import sin, cos, pi
+from math import sin, cos
 
 from geometry_info.edge_info import EdgeInfo
 
@@ -26,9 +23,9 @@ class GeometryContour:
 
         :param lead_vector_world_cs: Lead vector to the geometry cs if it is not in the same position as the world cs
         :type lead_vector_world_cs: np.array, optional
-        :param rotation_radian: In [rad]. If the coordinate system of the geometry is rotated in comparisson to the
-        world coordinate system then insert the angle here in radian, defaults to 0.0
-        :type rotation_radian: float, optional
+        :param world_to_geometry_cs_rotation: In [rad]. If the coordinate system of the geometry is rotated
+        in comparison to the world coordinate system then insert the angle here in radian, defaults to 0.0
+        :type world_to_geometry_cs_rotation: float, optional
         """
         self._set_transformations(lead_vector_world_cs=lead_vector_world_cs,
                                   world_to_geometry_cs_rotation=world_to_geometry_cs_rotation)
@@ -188,6 +185,7 @@ class GeometryContour:
         :rtype: float
         """
         return self._get_y_min_from_list(self.corner_point_list_world_cs)
+
     # endregion
 
     # region Geometry handling methods
@@ -266,11 +264,11 @@ class GeometryContour:
         # TODO Docstring
         new_corner_point_geometry_cs: np.array = self.transform_vector_world_to_geometry_cs(
             new_corner_point_world_cs)
-        self.replace_contour_corner_geometry_cs(new_corner_point_geometry_cs)
+        self.replace_contour_corner_geometry_cs(corner_index, new_corner_point_geometry_cs)
 
     def replace_contour_corner_geometry_cs(self, corner_index: int, new_corner_point_geometry_cs: np.array):
         # TODO Docstring
-        self._corner_point_geometry_cs_list[corner_index] = new_corner_point_geometry_cs
+        self._corner_point_list_geometry_cs[corner_index] = new_corner_point_geometry_cs
         self.create_contour_edges()
         # TODO update the centroid point and transformation matrix here
 
@@ -286,7 +284,7 @@ class GeometryContour:
             if counter + 1 == len(self._corner_point_list_geometry_cs):
                 end_point_geometry_cs = self._corner_point_list_geometry_cs[0]
             else:
-                end_point_geometry_cs = self._corner_point_list_geometry_cs[counter+1]
+                end_point_geometry_cs = self._corner_point_list_geometry_cs[counter + 1]
 
             edge: EdgeInfo = EdgeInfo(start_point=start_point_geometry_cs, end_point=end_point_geometry_cs)
             self._edge_list_geometry_cs.append(edge)
@@ -366,8 +364,8 @@ class GeometryContour:
         :rtype: bool
         """
         # First simple check if point is in max values of polygon
-        if (point_geometry_cs[0] > self.x_max() or point_geometry_cs[0] < self.x_min_geometry_cs() or
-                point_geometry_cs[1] > self.y_max() or point_geometry_cs[1] < self.y_min()):
+        if (point_geometry_cs[0] > self.x_max_geometry_cs or point_geometry_cs[0] < self.x_min_geometry_cs or
+                point_geometry_cs[1] > self.y_max_geometry_cs or point_geometry_cs[1] < self.y_min_geometry_cs):
             return False
 
         # Selected a very weird vector because I see no solution to find out if this vector is crossing through a corner
@@ -381,20 +379,20 @@ class GeometryContour:
         for edge_geometry_cs in self._edge_list_geometry_cs:
             factor_1_numerator: float = self._calc_vector_line_intersection_factor_1_numerator(
                 edge_geometry_cs.start_point, point_geometry_cs, testing_direction_vector)
-            factor_1_denumerator: float = self._calc_vector_line_intersection_factor_1_denumerator(
+            factor_1_denominator: float = self._calc_vector_line_intersection_factor_1_denominator(
                 edge_geometry_cs.edge_vector, testing_direction_vector)
             factor_2_numerator: float = self._calc_vector_line_intersection_factor_2_numerator(
                 edge_geometry_cs.start_point, edge_geometry_cs.edge_vector, point_geometry_cs)
-            factor_2_denumerator: float = self._calc_vector_line_intersection_factor_2_denumerator(
+            factor_2_denominator: float = self._calc_vector_line_intersection_factor_2_denominator(
                 edge_geometry_cs.edge_vector, testing_direction_vector)
 
-            if factor_1_denumerator == 0 or factor_2_denumerator == 0:
+            if factor_1_denominator == 0 or factor_2_denominator == 0:
                 continue
 
-            factor_1: float = factor_1_numerator / factor_1_denumerator
-            factor_2: float = factor_2_numerator / factor_2_denumerator
+            factor_1: float = factor_1_numerator / factor_1_denominator
+            factor_2: float = factor_2_numerator / factor_2_denominator
 
-            if factor_1 >= 0 and factor_1 < 1 and factor_2 >= 0:
+            if 0 <= factor_1 < 1 and factor_2 >= 0:
                 intersections = intersections + 1
 
         if (intersections % 2) == 1:
@@ -443,6 +441,7 @@ class GeometryContour:
     def transform_vector_geometry_to_world_cs(self, vector_geometry_cs: np.array) -> np.array:
         ext_vector_geometry_cs: np.array = np.append(vector_geometry_cs, [1])
         return self._tf_geometry_to_world_cs.dot(ext_vector_geometry_cs)
+
     # endregion
 
     # region Calculation methods
@@ -455,7 +454,7 @@ class GeometryContour:
         """
         area: float = 0.0
         for counter in range(0, len(self._corner_point_list_geometry_cs)):
-            if (counter+1) == len(self._corner_point_list_geometry_cs):
+            if (counter + 1) == len(self._corner_point_list_geometry_cs):
                 part_area: float = ((self._corner_point_list_geometry_cs[counter][0] *
                                      self._corner_point_list_geometry_cs[0][1]) -
                                     (self._corner_point_list_geometry_cs[0][0] *
@@ -463,8 +462,8 @@ class GeometryContour:
                 area = area + part_area
             else:
                 part_area: float = ((self._corner_point_list_geometry_cs[counter][0] *
-                                     self._corner_point_list_geometry_cs[counter+1][1]) -
-                                    (self._corner_point_list_geometry_cs[counter+1][0] *
+                                     self._corner_point_list_geometry_cs[counter + 1][1]) -
+                                    (self._corner_point_list_geometry_cs[counter + 1][0] *
                                      self._corner_point_list_geometry_cs[counter][1]))
                 area = area + part_area
 
@@ -483,12 +482,11 @@ class GeometryContour:
         x_centroid: float = 0.0
         y_centroid: float = 0.0
 
-        x_first_factor: float = 0.0
-        y_first_factor: float = 0.0
-        second_factor: float = 0.0
-
         for counter in range(0, len(self._corner_point_list_geometry_cs)):
-            if (counter+1) == len(self._corner_point_list_geometry_cs):
+            x_first_factor: float
+            y_first_factor: float
+            second_factor: float
+            if (counter + 1) == len(self._corner_point_list_geometry_cs):
                 second_factor = ((self._corner_point_list_geometry_cs[counter][0] *
                                   self._corner_point_list_geometry_cs[0][1]) -
                                  (self._corner_point_list_geometry_cs[0][0] *
@@ -500,19 +498,19 @@ class GeometryContour:
 
             else:
                 second_factor = ((self._corner_point_list_geometry_cs[counter][0] *
-                                  self._corner_point_list_geometry_cs[counter+1][1]) -
-                                 (self._corner_point_list_geometry_cs[counter+1][0] *
+                                  self._corner_point_list_geometry_cs[counter + 1][1]) -
+                                 (self._corner_point_list_geometry_cs[counter + 1][0] *
                                   self._corner_point_list_geometry_cs[counter][1]))
                 x_first_factor = (self._corner_point_list_geometry_cs[counter][0] +
-                                  self._corner_point_list_geometry_cs[counter+1][0])
+                                  self._corner_point_list_geometry_cs[counter + 1][0])
                 y_first_factor = (self._corner_point_list_geometry_cs[counter][1] +
-                                  self._corner_point_list_geometry_cs[counter+1][1])
+                                  self._corner_point_list_geometry_cs[counter + 1][1])
 
             x_centroid = x_centroid + (x_first_factor * second_factor)
             y_centroid = y_centroid + (y_first_factor * second_factor)
 
-        x_centroid = (1/(6 * geometry_area)) * x_centroid
-        y_centroid = (1/(6 * geometry_area)) * y_centroid
+        x_centroid = (1 / (6 * geometry_area)) * x_centroid
+        y_centroid = (1 / (6 * geometry_area)) * y_centroid
 
         centroid_point_geometry_cs: np.array = np.array([x_centroid, y_centroid])
         return centroid_point_geometry_cs
@@ -527,7 +525,7 @@ class GeometryContour:
         return self.transform_vector_geometry_to_world_cs(centroid_geometry_cs)
 
     def calc_ortho_vector_point_to_line(self,
-                                        orthogonal_point: np. array,
+                                        orthogonal_point: np.array,
                                         line: np.array,
                                         lead_vector: np.array) -> np.array:
         """General method for calculating the orthogonal vector from a line to a point.
@@ -550,7 +548,7 @@ class GeometryContour:
         try:
             factor = nominator / denominator
         except ZeroDivisionError:
-            print("Devided by zero in the 'calculate_orthogonal_vector_point_to_line' method!")
+            print("Divided by zero in the 'calculate_orthogonal_vector_point_to_line' method!")
             return None
 
         point_on_line: np.array = orthogonal_point + lead_vector + factor * line
@@ -575,9 +573,9 @@ class GeometryContour:
         :rtype: float
         """
         vector_point_to_line: np.array = self.calc_ortho_vector_point_to_line(
-            orthogonal_point_geometry_cs=point_geometry_cs,
+            orthogonal_point=point_geometry_cs,
             line=line,
-            start_point_line_geometry_cs=start_point_line_geometry_cs)
+            lead_vector=start_point_line_geometry_cs)
         return np.linalg.norm(vector_point_to_line)
 
     def calculate_contour_length(self) -> float:
@@ -600,7 +598,7 @@ class GeometryContour:
                                             direction_vector_2: np.array) -> np.array:
         """This method calculates the point where two vector lines intersect.
         Notice that the direction vectors will be extended with a factor from +/- infinite.
-        For calculating intersaction point of two vectors that is in the length of the vectors see:
+        For calculating intersection point of two vectors that is in the length of the vectors see:
         calculate_vector_intersection_point
         Watch out that both lead_vectors are in the same coordinate system
 
@@ -618,7 +616,7 @@ class GeometryContour:
         factor_1_numerator: float = self._calc_vector_line_intersection_factor_1_numerator(lead_vector_1,
                                                                                            lead_vector_2,
                                                                                            direction_vector_2)
-        factor_1_denumerator: float = self._calc_vector_line_intersection_factor_1_denumerator(direction_vector_1,
+        factor_1_denumerator: float = self._calc_vector_line_intersection_factor_1_denominator(direction_vector_1,
                                                                                                direction_vector_2)
 
         # TODO check for ZeroDivision
@@ -651,19 +649,19 @@ class GeometryContour:
         factor_1_numerator: float = self._calc_vector_line_intersection_factor_1_numerator(lead_vector_1,
                                                                                            lead_vector_2,
                                                                                            direction_vector_2)
-        factor_1_denumerator: float = self._calc_vector_line_intersection_factor_1_denumerator(direction_vector_1,
+        factor_1_denominator: float = self._calc_vector_line_intersection_factor_1_denominator(direction_vector_1,
                                                                                                direction_vector_2)
         factor_2_numerator: float = self._calc_vector_line_intersection_factor_2_numerator(lead_vector_1,
                                                                                            direction_vector_1,
                                                                                            lead_vector_2)
-        factor_2_denumerator: float = self._calc_vector_line_intersection_factor_2_denumerator(direction_vector_1,
+        factor_2_denominator: float = self._calc_vector_line_intersection_factor_2_denominator(direction_vector_1,
                                                                                                direction_vector_2)
 
         # TODO check for ZeroDivision
-        factor_1: float = round(factor_1_numerator / factor_1_denumerator, 10)
-        factor_2: float = round(factor_2_numerator / factor_2_denumerator, 10)
+        factor_1: float = round(factor_1_numerator / factor_1_denominator, 10)
+        factor_2: float = round(factor_2_numerator / factor_2_denominator, 10)
 
-        if factor_1 > 0 and factor_1 < 1 and factor_2 > 0 and factor_2 < 1:
+        if 0 < factor_1 < 1 and 0 < factor_2 < 1:
             return lead_vector_1 + (factor_1 * direction_vector_1)
         else:
             return None
@@ -676,7 +674,7 @@ class GeometryContour:
         return ((lead_vector_2[1] * direction_vector_2[0]) + (lead_vector_1[0] * direction_vector_2[1]) -
                 (lead_vector_2[0] * direction_vector_2[1]) - (lead_vector_1[1] * direction_vector_2[0]))
 
-    def _calc_vector_line_intersection_factor_1_denumerator(self,
+    def _calc_vector_line_intersection_factor_1_denominator(self,
                                                             direction_vector_1: np.array,
                                                             direction_vector_2: np.array) -> float:
         # TODO Docstring
@@ -690,11 +688,11 @@ class GeometryContour:
         return ((lead_vector_1[1] * direction_vector_1[0]) + (lead_vector_2[0] * direction_vector_1[1]) -
                 (lead_vector_1[0] * direction_vector_1[1]) - (lead_vector_2[1] * direction_vector_1[0]))
 
-    def _calc_vector_line_intersection_factor_2_denumerator(self,
+    def _calc_vector_line_intersection_factor_2_denominator(self,
                                                             direction_vector_1: np.array,
                                                             direction_vector_2: np.array) -> float:
         # TODO Docstring
-        return ((direction_vector_2[1] * direction_vector_1[0]) - (direction_vector_2[0] * direction_vector_1[1]))
+        return (direction_vector_2[1] * direction_vector_1[0]) - (direction_vector_2[0] * direction_vector_1[1])
 
     def calc_distance_closest_edge_to_point(self, point: np.array) -> float:
         # TODO Docstring
@@ -710,6 +708,7 @@ class GeometryContour:
         # TODO Docstring
         shortest_edge: EdgeInfo = self.get_shortest_edge()
         return np.linalg.norm(shortest_edge.edge_vector)
+
     # endregion
 
     # region Print and plot methods
@@ -765,11 +764,12 @@ class GeometryContour:
                                                                                edge.edge_vector,
                                                                                edge.start_point)
             orthogonal_vector = self.extend_vector_by_length(orthogonal_vector, 0.3)
-            plot.plot([centroid_world_cs[0], centroid_world_cs[0]+orthogonal_vector[0]],
-                      [centroid_world_cs[1], centroid_world_cs[1]+orthogonal_vector[1]],
+            plot.plot([centroid_world_cs[0], centroid_world_cs[0] + orthogonal_vector[0]],
+                      [centroid_world_cs[1], centroid_world_cs[1] + orthogonal_vector[1]],
                       "g-")
 
         plot.show(block=block)
+
     # endregion
 
     # region Helper methods
@@ -795,7 +795,7 @@ class GeometryContour:
         """
         x_max: float = point_list[0][0]  # Get first x value as init value
         for point in point_list:
-            if(x_max < point[0]):
+            if x_max < point[0]:
                 x_max = point[0]
 
         return x_max
@@ -808,7 +808,7 @@ class GeometryContour:
         """
         x_min: float = point_list[0][0]  # Get first x value as init value
         for point in point_list:
-            if(x_min > point[0]):
+            if x_min > point[0]:
                 x_min = point[0]
 
         return x_min
@@ -821,7 +821,7 @@ class GeometryContour:
         """
         y_max: float = point_list[0][1]  # Get first y value as init value
         for point in point_list:
-            if(y_max < point[1]):
+            if y_max < point[1]:
                 y_max = point[1]
 
         return y_max
@@ -834,7 +834,7 @@ class GeometryContour:
         """
         y_min: float = point_list[0][1]  # Get first y value as init value
         for point in point_list:
-            if(y_min > point[1]):
+            if y_min > point[1]:
                 y_min = point[1]
 
         return y_min
