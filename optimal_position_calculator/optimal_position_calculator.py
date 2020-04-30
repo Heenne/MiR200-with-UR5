@@ -172,7 +172,7 @@ def mutate_geometry_contour_with_dead_zones(contour_to_mutate: GeometryContour,
                                             min_mutation_distance: float,
                                             max_mutation_distance: float,
                                             outside_border_list: list,
-                                            deadzone_list: list = list()) -> GeometryContour:
+                                            deadzone_list: list[GeometryContour] = list()) -> GeometryContour:
     """Method for the mutation of corner-point of a contour.
     But this time each corner has its individual outside_border and there are multiple deadzones where
     no corner is allowed to be.
@@ -222,7 +222,7 @@ def mutate_geometry_contour_with_dead_zones(contour_to_mutate: GeometryContour,
 
         if (outside_border_list[index_of_mutated_corner].is_point_in_contour(corner_to_mutate_geometry_cs) and
                 corner_not_in_deadzone):
-            contour_to_mutate.replace_contour_corner(index_of_mutated_corner, corner_to_mutate_geometry_cs)
+            contour_to_mutate.replace_contour_corner_geometry_cs(index_of_mutated_corner, corner_to_mutate_geometry_cs)
             corner_was_replaced = True
 
     return contour_to_mutate
