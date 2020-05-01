@@ -100,7 +100,7 @@ def calculate_fitness_sum_of_grip_population(grip_contour_population: list, cent
 
 def calculate_fitness_of_ur5_base_contour(ur5_base_contour: GeometryContour, ) -> float:
     fitness: float
-    fitness = 1 / pow(ur5_base_contour.calculate_contour_length(), 2)
+    fitness = 1 / pow(ur5_base_contour.calc_contour_length(), 2)
 
     return fitness
 
@@ -410,8 +410,8 @@ if __name__ == '__main__':
                 y_pose = random.uniform(posible_ur5_base_link_pose.y_min_world_cs,
                                         posible_ur5_base_link_pose.y_max_world_cs)
                 pose_to_check_world_cs: np.array = np.array([x_pose, y_pose])
-                if (posible_ur5_base_link_pose.is_world_cs_point_in_contour(pose_to_check_world_cs) and not
-                        extended_object_contour.is_world_cs_point_in_contour(pose_to_check_world_cs)):
+                if posible_ur5_base_link_pose.is_world_cs_point_in_contour(pose_to_check_world_cs) and not \
+                        extended_object_contour.is_world_cs_point_in_contour(pose_to_check_world_cs):
                     ur5_base_link_pose_contour.add_contour_corner_world_cs(pose_to_check_world_cs)
                     point_valid = True
         ur5_base_link_population.append(ur5_base_link_pose_contour)
@@ -504,11 +504,14 @@ if __name__ == '__main__':
     best_grip_contour: GeometryContour = sorted_total_population[0][0]
     best_grip_contour.plot_edges(color="green")
 
-    # mir_contour: GeometryContour = GeometryContour()
-    # mir_contour.add_contour_corner(np.array([447.5, 291]))
-    # mir_contour.add_contour_corner(np.array([-447.5, 291]))
-    # mir_contour.add_contour_corner(np.array([-447.5, -291]))
-    # mir_contour.add_contour_corner(np.array([447.5, -291]))
+    mir_contour: GeometryContour = GeometryContour()
+    mir_contour.add_contour_corner_geometry_cs(np.array([0.4475, 0.291]))
+    mir_contour.add_contour_corner_geometry_cs(np.array([-0.4475, 0.291]))
+    mir_contour.add_contour_corner_geometry_cs(np.array([-0.4475, -0.291]))
+    mir_contour.add_contour_corner_geometry_cs(np.array([0.4475, -0.291]))
+    mir_contour.move_coordinate_system(new_lead_vector_world_cs=np.array([-2, -1]))
+    mir_contour.rotate_contour(new_geometry_cs_rotation=(pi / 2))
+    plot.plot(mir_contour.lead_vector_world_cs[0], mir_contour.lead_vector_world_cs[1], "ko")
 
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
 

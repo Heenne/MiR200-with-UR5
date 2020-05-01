@@ -2,6 +2,7 @@ from matplotlib import pyplot as plot
 from matplotlib import colors as mcolors
 import numpy as np
 from math import sin, cos
+from typing import List
 
 from geometry_info.edge_info import EdgeInfo
 
@@ -10,7 +11,7 @@ class GeometryContour:
     # Member
     # Contains the translation of the geometry coordinate system in world cs
     _lead_vector_world_cs: np.array
-    _world_to_geometry_cs_rotation: float
+    _geometry_cs_rotation: float
     # Contains the rotation and translation of the centroid from the world cs
     _tf_world_to_geometry_cs: np.array
     _tf_geometry_to_world_cs: np.array
@@ -28,7 +29,7 @@ class GeometryContour:
         :type world_to_geometry_cs_rotation: float, optional
         """
         self._set_transformations(lead_vector_world_cs=lead_vector_world_cs,
-                                  world_to_geometry_cs_rotation=world_to_geometry_cs_rotation)
+                                  geometry_cs_rotation=world_to_geometry_cs_rotation)
         self._corner_point_list_geometry_cs = list()
         self._edge_list_geometry_cs = list()
 
@@ -68,7 +69,7 @@ class GeometryContour:
         :return: Rotation in radian
         :rtype: float
         """
-        return self._world_to_geometry_cs_rotation
+        return self._geometry_cs_rotation
 
     @property
     def corner_point_list_geometry_cs(self) -> list:
@@ -231,22 +232,72 @@ class GeometryContour:
 
         self.create_contour_edges()
 
-    def _set_transformations(self, lead_vector_world_cs: np.array, world_to_geometry_cs_rotation: float):
+    def _set_transformations(self, lead_vector_world_cs: np.array, geometry_cs_rotation: float):
         """Method for setting transformation from geometry cs to world and other way around.
 
         :param lead_vector_world_cs: geometric centroid of the contour
         :type lead_vector_world_cs: np.array
-        :param world_to_geometry_cs_rotation: rotation of the geometry cs to the world cs
-        :type world_to_geometry_cs_rotation: float
+        :param geometry_cs_rotation: rotation of the geometry cs to the world cs
+        :type geometry_cs_rotation: float
         """
         self._lead_vector_world_cs = lead_vector_world_cs
-        self._world_to_geometry_cs_rotation = world_to_geometry_cs_rotation
+        self._geometry_cs_rotation = geometry_cs_rotation
 
         self._tf_geometry_to_world_cs = np.array(
-            [[cos(world_to_geometry_cs_rotation), -sin(world_to_geometry_cs_rotation), lead_vector_world_cs[0]],
-             [sin(world_to_geometry_cs_rotation), cos(world_to_geometry_cs_rotation), lead_vector_world_cs[1]],
+            [[cos(geometry_cs_rotation), -sin(geometry_cs_rotation), lead_vector_world_cs[0]],
+             [sin(geometry_cs_rotation), cos(geometry_cs_rotation), lead_vector_world_cs[1]],
              [0, 0, 1]])
         self._tf_world_to_geometry_cs = np.linalg.inv(self._tf_geometry_to_world_cs)
+
+    def move_coordinate_system(self, new_lead_vector_world_cs: np.array = np.array([0, 0]),
+                               new_geometry_cs_rotation: float = 0.0) -> None:
+        """
+        This method moves the coordinate system from the current position and rotation to a new pose.
+        All corner points stay in the same position seen from the world cs.
+
+        :param new_lead_vector_world_cs: New lead vector that specifies the translation of the new cs
+        :type new_lead_vector_world_cs: np.array
+        :param new_geometry_cs_rotation: Rotation of the world cs to geometry cs
+        :type new_geometry_cs_rotation: float
+        """
+        new_tf_geometry_to_world_cs: np.array = np.array(
+            [[cos(new_geometry_cs_rotation), -sin(new_geometry_cs_rotation), new_lead_vector_world_cs[0]],
+             [sin(new_geometry_cs_rotation), cos(new_geometry_cs_rotation), new_lead_vector_world_cs[1]],
+             [0, 0, 1]])
+        new_tf_world_to_geometry: np.array = np.linalg.inv(new_tf_geometry_to_world_cs)
+        tf_old_to_new_geometry_cs: np.array = new_tf_world_to_geometry.dot(self._tf_geometry_to_world_cs)
+
+        corner_point_list_new_geometry_cs: List[np.array] = list()
+        for corner in self._corner_point_list_geometry_cs:
+            ext_corner: np.array = np.append(corner, [1])
+            ext_new_corner_geometry_cs: np.array = tf_old_to_new_geometry_cs.dot(ext_corner)
+            corner_point_list_new_geometry_cs.append(ext_new_corner_geometry_cs[:-1])
+
+        self._lead_vector_world_cs = new_lead_vector_world_cs
+        self._geometry_cs_rotation = new_geometry_cs_rotation
+        self._tf_geometry_to_world_cs = new_tf_geometry_to_world_cs
+        self._tf_world_to_geometry_cs = new_tf_world_to_geometry
+
+        self._corner_point_list_geometry_cs = corner_point_list_new_geometry_cs
+        self.create_contour_edges()
+
+    def rotate_contour(self, new_geometry_cs_rotation: float) -> None:
+        """
+        This method sets the rotation of the geometry coordination system.
+        The points defined in the geometry cs stay the same to be rotated with the coordinate system
+
+        :param new_geometry_cs_rotation: New rotation degree in radian
+        :type new_geometry_cs_rotation: float
+        """
+        new_tf_geometry_to_world_cs: np.array = np.array(
+            [[cos(new_geometry_cs_rotation), -sin(new_geometry_cs_rotation), self._lead_vector_world_cs[0]],
+             [sin(new_geometry_cs_rotation), cos(new_geometry_cs_rotation), self._lead_vector_world_cs[1]],
+             [0, 0, 1]])
+        new_tf_world_to_geometry: np.array = np.linalg.inv(new_tf_geometry_to_world_cs)
+
+        self._geometry_cs_rotation = new_geometry_cs_rotation
+        self._tf_geometry_to_world_cs = new_tf_geometry_to_world_cs
+        self._tf_world_to_geometry_cs = new_tf_world_to_geometry
 
     def add_contour_corner_world_cs(self, additional_corner_world_cs: np.array):
         # TODO Docstring
@@ -292,13 +343,13 @@ class GeometryContour:
     def get_closest_edge_to_point(self, point_geometry_cs: np.array) -> EdgeInfo:
         # TODO Docstring
         closest_edge_geometry_cs: EdgeInfo = self._edge_list_geometry_cs[0]
-        shortest_distance: float = self.calculate_distance_point_to_line(point_geometry_cs,
-                                                                         closest_edge_geometry_cs.edge_vector,
-                                                                         closest_edge_geometry_cs.start_point)
+        shortest_distance: float = self.calc_distance_point_to_line(point_geometry_cs,
+                                                                    closest_edge_geometry_cs.edge_vector,
+                                                                    closest_edge_geometry_cs.start_point)
         for edge_geometry_cs in self._edge_list_geometry_cs:
-            new_distance: float = self.calculate_distance_point_to_line(point_geometry_cs,
-                                                                        edge_geometry_cs.edge_vector,
-                                                                        edge_geometry_cs.start_point)
+            new_distance: float = self.calc_distance_point_to_line(point_geometry_cs,
+                                                                   edge_geometry_cs.edge_vector,
+                                                                   edge_geometry_cs.start_point)
             if new_distance < shortest_distance:
                 closest_edge_geometry_cs = edge_geometry_cs
                 shortest_distance = new_distance
@@ -424,7 +475,7 @@ class GeometryContour:
                 if edge_inner_geometry_cs is edge_outer_geometry_cs:
                     continue
 
-                intersection_point_geometry_cs: np.array = self.calculate_vector_intersection_point(
+                intersection_point_geometry_cs: np.array = self.calc_vector_intersection_point(
                     edge_outer_geometry_cs.start_point,
                     edge_outer_geometry_cs.edge_vector,
                     edge_inner_geometry_cs.start_point,
@@ -447,7 +498,7 @@ class GeometryContour:
     # endregion
 
     # region Calculation methods
-    def calculate_area(self) -> float:
+    def calc_area(self) -> float:
         """Method for calculating the area in the contour.
         For formula see: https://en.wikipedia.org/wiki/Centroid under "Of a polygon".
 
@@ -479,7 +530,7 @@ class GeometryContour:
         :return: 2x1 vector in the geometry cs that points to the geometric centroid
         :rtype: np.array
         """
-        geometry_area: float = self.calculate_area()
+        geometry_area: float = self.calc_area()
 
         x_centroid: float = 0.0
         y_centroid: float = 0.0
@@ -557,10 +608,10 @@ class GeometryContour:
         vector_point_to_line: np.array = point_on_line - orthogonal_point
         return vector_point_to_line
 
-    def calculate_distance_point_to_line(self,
-                                         point_geometry_cs: np.array,
-                                         line: np.array,
-                                         start_point_line_geometry_cs: np.array) -> float:
+    def calc_distance_point_to_line(self,
+                                    point_geometry_cs: np.array,
+                                    line: np.array,
+                                    start_point_line_geometry_cs: np.array) -> float:
         """Method which calculates the shortest distance from a point to line.
         Line is not limited to the length of the vector from the start_point.
         Shortest distance uses the orthogonal vector from point to line.
@@ -580,7 +631,7 @@ class GeometryContour:
             lead_vector=start_point_line_geometry_cs)
         return np.linalg.norm(vector_point_to_line)
 
-    def calculate_contour_length(self) -> float:
+    def calc_contour_length(self) -> float:
         """Sums up all lengths of the edges.
 
         :return: Length of all edges of the contour
@@ -626,11 +677,11 @@ class GeometryContour:
 
         return lead_vector_1 + (factor_1 * direction_vector_1)
 
-    def calculate_vector_intersection_point(self,
-                                            lead_vector_1: np.array,
-                                            direction_vector_1: np.array,
-                                            lead_vector_2: np.array,
-                                            direction_vector_2: np.array) -> np.array:
+    def calc_vector_intersection_point(self,
+                                       lead_vector_1: np.array,
+                                       direction_vector_1: np.array,
+                                       lead_vector_2: np.array,
+                                       direction_vector_2: np.array) -> np.array:
         """This method calculates the point where two vectors intersect.
         Notice that the direction vectors will NOT be extended with a factor from +/- infinite.
         For calculating intersaction point of two vectors lines that will be extended:
@@ -680,7 +731,7 @@ class GeometryContour:
                                                             direction_vector_1: np.array,
                                                             direction_vector_2: np.array) -> float:
         # TODO Docstring
-        return ((direction_vector_1[1] * direction_vector_2[0]) - (direction_vector_1[0] * direction_vector_2[1]))
+        return (direction_vector_1[1] * direction_vector_2[0]) - (direction_vector_1[0] * direction_vector_2[1])
 
     def _calc_vector_line_intersection_factor_2_numerator(self,
                                                           lead_vector_1: np.array,
@@ -699,7 +750,7 @@ class GeometryContour:
     def calc_distance_closest_edge_to_point(self, point: np.array) -> float:
         # TODO Docstring
         closest_edge: EdgeInfo = self.get_closest_edge_to_point(point)
-        return self.calculate_distance_point_to_line(point, closest_edge.edge_vector, closest_edge.start_point)
+        return self.calc_distance_point_to_line(point, closest_edge.edge_vector, closest_edge.start_point)
 
     def calc_longest_edge_length(self) -> float:
         # TODO Docstring
@@ -717,7 +768,7 @@ class GeometryContour:
     def print_info(self):
         # TODO Docstring
         print("Contour info: ")
-        print("Geometry area: " + str(self.calculate_area()))
+        print("Geometry area: " + str(self.calc_area()))
         print("Centroid point: " + str(self.lead_vector_world_cs))
 
         for corner in self.corner_point_list_world_cs:
