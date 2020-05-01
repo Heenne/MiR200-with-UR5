@@ -242,11 +242,11 @@ class GeometryContour:
         self._lead_vector_world_cs = lead_vector_world_cs
         self._world_to_geometry_cs_rotation = world_to_geometry_cs_rotation
 
-        self._tf_world_to_geometry_cs = np.array(
+        self._tf_geometry_to_world_cs = np.array(
             [[cos(world_to_geometry_cs_rotation), -sin(world_to_geometry_cs_rotation), lead_vector_world_cs[0]],
              [sin(world_to_geometry_cs_rotation), cos(world_to_geometry_cs_rotation), lead_vector_world_cs[1]],
              [0, 0, 1]])
-        self._tf_geometry_to_world_cs = np.linalg.inv(self._tf_world_to_geometry_cs)
+        self._tf_world_to_geometry_cs = np.linalg.inv(self._tf_geometry_to_world_cs)
 
     def add_contour_corner_world_cs(self, additional_corner_world_cs: np.array):
         # TODO Docstring
@@ -436,11 +436,13 @@ class GeometryContour:
 
     def transform_vector_world_to_geometry_cs(self, vector_world_cs: np.array) -> np.array:
         ext_vector_world_cs: np.array = np.append(vector_world_cs, [1])
-        return self._tf_world_to_geometry_cs.dot(ext_vector_world_cs)
+        ext_vector_geometry_cs: np.array = self._tf_world_to_geometry_cs.dot(ext_vector_world_cs)
+        return ext_vector_geometry_cs[:-1]
 
     def transform_vector_geometry_to_world_cs(self, vector_geometry_cs: np.array) -> np.array:
         ext_vector_geometry_cs: np.array = np.append(vector_geometry_cs, [1])
-        return self._tf_geometry_to_world_cs.dot(ext_vector_geometry_cs)
+        ext_vector_world_cs: np.array = self._tf_geometry_to_world_cs.dot(ext_vector_geometry_cs)
+        return ext_vector_world_cs[:-1]
 
     # endregion
 
