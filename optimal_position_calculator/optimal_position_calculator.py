@@ -504,14 +504,11 @@ if __name__ == '__main__':
     best_grip_contour: GeometryContour = sorted_total_population[0][0]
     best_grip_contour.plot_edges(color="green")
 
-    mir_contour: GeometryContour = GeometryContour()
-    mir_contour.add_contour_corner_geometry_cs(np.array([0.4475, 0.291]))
-    mir_contour.add_contour_corner_geometry_cs(np.array([-0.4475, 0.291]))
-    mir_contour.add_contour_corner_geometry_cs(np.array([-0.4475, -0.291]))
-    mir_contour.add_contour_corner_geometry_cs(np.array([0.4475, -0.291]))
-    mir_contour.move_coordinate_system(new_lead_vector_world_cs=np.array([-2, -1]))
-    mir_contour.rotate_contour(new_geometry_cs_rotation=(pi / 2))
-    plot.plot(mir_contour.lead_vector_world_cs[0], mir_contour.lead_vector_world_cs[1], "ko")
+    # mir_contour: GeometryContour = GeometryContour()
+    #
+    # mir_contour.move_coordinate_system(new_lead_vector_world_cs=np.array([-2, -1]))
+    # mir_contour.rotate_contour(new_geometry_cs_rotation=(pi / 2))
+    # plot.plot(mir_contour.lead_vector_world_cs[0], mir_contour.lead_vector_world_cs[1], "ko")
 
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
 

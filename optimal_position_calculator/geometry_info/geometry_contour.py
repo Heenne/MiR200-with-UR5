@@ -28,8 +28,8 @@ class GeometryContour:
         in comparison to the world coordinate system then insert the angle here in radian, defaults to 0.0
         :type world_to_geometry_cs_rotation: float, optional
         """
-        self._set_transformations(lead_vector_world_cs=lead_vector_world_cs,
-                                  geometry_cs_rotation=world_to_geometry_cs_rotation)
+        self._set_geometry_transformations(lead_vector_world_cs=lead_vector_world_cs,
+                                           geometry_cs_rotation=world_to_geometry_cs_rotation)
         self._corner_point_list_geometry_cs = list()
         self._edge_list_geometry_cs = list()
 
@@ -192,7 +192,7 @@ class GeometryContour:
     # region Geometry handling methods
     def import_contour_with_offset(self, contour: 'GeometryContour', offset_value: float):
         # TODO Docstring
-        self._set_transformations(contour.lead_vector_world_cs, contour.world_to_geometry_rotation)
+        self._set_geometry_transformations(contour.lead_vector_world_cs, contour.world_to_geometry_rotation)
 
         for counter in range(0, len(contour.edge_list_geometry_cs)):
             bef_edge: np.array  # Edge before the current edge -> counter-1 in the list
@@ -232,7 +232,7 @@ class GeometryContour:
 
         self.create_contour_edges()
 
-    def _set_transformations(self, lead_vector_world_cs: np.array, geometry_cs_rotation: float):
+    def _set_geometry_transformations(self, lead_vector_world_cs: np.array, geometry_cs_rotation: float):
         """Method for setting transformation from geometry cs to world and other way around.
 
         :param lead_vector_world_cs: geometric centroid of the contour
