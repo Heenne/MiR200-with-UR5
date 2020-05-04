@@ -9,7 +9,7 @@ from typing import List
 
 from geometry_info.geometry_contour import GeometryContour
 from geometry_info.movable_object import MovableObject, Box, Cylinder, IsoscelesTriangle, RightAngledTriangle
-# from geometry_info.edge_info import EdgeInfo
+from geometry_info.MuR205 import MuR205
 
 from urdf_reader import URDFReader
 from urdf_reader import GeometryType
@@ -504,11 +504,12 @@ if __name__ == '__main__':
     best_grip_contour: GeometryContour = sorted_total_population[0][0]
     best_grip_contour.plot_edges(color="green")
 
-    # mir_contour: GeometryContour = GeometryContour()
-    #
-    # mir_contour.move_coordinate_system(new_lead_vector_world_cs=np.array([-2, -1]))
-    # mir_contour.rotate_contour(new_geometry_cs_rotation=(pi / 2))
-    # plot.plot(mir_contour.lead_vector_world_cs[0], mir_contour.lead_vector_world_cs[1], "ko")
+    mir_contour: MuR205 = MuR205()
+    mir_contour.move_mur205_by_ur5_base_link(best_grip_contour.corner_point_list_world_cs[0], -(pi/2))
+    mir_contour.plot_edges(color="black")
+
+    mir_contour.rotate_relative_around_ur5_base_cs(pi/4)
+    mir_contour.plot_edges(color="pink")
 
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
 

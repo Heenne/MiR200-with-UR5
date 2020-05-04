@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plot
 from matplotlib import colors as mcolors
 import numpy as np
-from math import sin, cos
+from math import sin, cos, atan2
 from typing import List
 
 from geometry_info.edge_info import EdgeInfo
@@ -243,11 +243,19 @@ class GeometryContour:
         self._lead_vector_world_cs = lead_vector_world_cs
         self._geometry_cs_rotation = geometry_cs_rotation
 
-        self._tf_geometry_to_world_cs = np.array(
-            [[cos(geometry_cs_rotation), -sin(geometry_cs_rotation), lead_vector_world_cs[0]],
-             [sin(geometry_cs_rotation), cos(geometry_cs_rotation), lead_vector_world_cs[1]],
-             [0, 0, 1]])
+        # self._tf_geometry_to_world_cs = np.array(
+        #     [[cos(geometry_cs_rotation), -sin(geometry_cs_rotation), lead_vector_world_cs[0]],
+        #      [sin(geometry_cs_rotation), cos(geometry_cs_rotation), lead_vector_world_cs[1]],
+        #      [0, 0, 1]])
+        self._tf_geometry_to_world_cs: np.array = self._create_transformation_matrix(lead_vector_world_cs,
+                                                                                     geometry_cs_rotation)
         self._tf_world_to_geometry_cs = np.linalg.inv(self._tf_geometry_to_world_cs)
+
+    def _create_transformation_matrix(self, lead_vector: np.array, rotation: float) -> np.array:
+        tf_matrix: np.array = np.array([[cos(rotation), -sin(rotation), lead_vector[0]],
+                                        [sin(rotation), cos(rotation), lead_vector[1]],
+                                        [0, 0, 1]])
+        return tf_matrix
 
     def move_coordinate_system(self, new_lead_vector_world_cs: np.array = np.array([0, 0]),
                                new_geometry_cs_rotation: float = 0.0) -> None:
@@ -260,10 +268,12 @@ class GeometryContour:
         :param new_geometry_cs_rotation: Rotation of the world cs to geometry cs
         :type new_geometry_cs_rotation: float
         """
-        new_tf_geometry_to_world_cs: np.array = np.array(
-            [[cos(new_geometry_cs_rotation), -sin(new_geometry_cs_rotation), new_lead_vector_world_cs[0]],
-             [sin(new_geometry_cs_rotation), cos(new_geometry_cs_rotation), new_lead_vector_world_cs[1]],
-             [0, 0, 1]])
+        # new_tf_geometry_to_world_cs: np.array = np.array(
+        #     [[cos(new_geometry_cs_rotation), -sin(new_geometry_cs_rotation), new_lead_vector_world_cs[0]],
+        #      [sin(new_geometry_cs_rotation), cos(new_geometry_cs_rotation), new_lead_vector_world_cs[1]],
+        #      [0, 0, 1]])
+        new_tf_geometry_to_world_cs: np.array = self._create_transformation_matrix(new_lead_vector_world_cs,
+                                                                                   new_geometry_cs_rotation)
         new_tf_world_to_geometry: np.array = np.linalg.inv(new_tf_geometry_to_world_cs)
         tf_old_to_new_geometry_cs: np.array = new_tf_world_to_geometry.dot(self._tf_geometry_to_world_cs)
 
@@ -281,6 +291,26 @@ class GeometryContour:
         self._corner_point_list_geometry_cs = corner_point_list_new_geometry_cs
         self.create_contour_edges()
 
+    def move_contour(self, new_lead_vector_world_cs: np.array, new_geometry_cs_rotation: float):
+        """
+        This method sets the translation and rotation of the geometry coordination system.
+        The points defined in the geometry cs stay the same.
+
+        :param new_lead_vector_world_cs: New lead vector from world cs to geometry cs
+        :type new_lead_vector_world_cs: np.array
+        :param new_geometry_cs_rotation: New rotation degree in radian
+        :type new_geometry_cs_rotation: float
+
+        """
+        new_tf_geometry_to_world_cs: np.array = self._create_transformation_matrix(new_lead_vector_world_cs,
+                                                                                   new_geometry_cs_rotation)
+        new_tf_world_to_geometry_cs: np.array = np.linalg.inv(new_tf_geometry_to_world_cs)
+
+        self._lead_vector_world_cs = new_lead_vector_world_cs
+        self._geometry_cs_rotation = new_geometry_cs_rotation
+        self._tf_geometry_to_world_cs = new_tf_geometry_to_world_cs
+        self._tf_world_to_geometry_cs = new_tf_world_to_geometry_cs
+
     def rotate_contour(self, new_geometry_cs_rotation: float) -> None:
         """
         This method sets the rotation of the geometry coordination system.
@@ -289,15 +319,13 @@ class GeometryContour:
         :param new_geometry_cs_rotation: New rotation degree in radian
         :type new_geometry_cs_rotation: float
         """
-        new_tf_geometry_to_world_cs: np.array = np.array(
-            [[cos(new_geometry_cs_rotation), -sin(new_geometry_cs_rotation), self._lead_vector_world_cs[0]],
-             [sin(new_geometry_cs_rotation), cos(new_geometry_cs_rotation), self._lead_vector_world_cs[1]],
-             [0, 0, 1]])
-        new_tf_world_to_geometry: np.array = np.linalg.inv(new_tf_geometry_to_world_cs)
+        new_tf_geometry_to_world_cs: np.array = self._create_transformation_matrix(self._lead_vector_world_cs,
+                                                                                   new_geometry_cs_rotation)
+        new_tf_world_to_geometry_cs: np.array = np.linalg.inv(new_tf_geometry_to_world_cs)
 
         self._geometry_cs_rotation = new_geometry_cs_rotation
         self._tf_geometry_to_world_cs = new_tf_geometry_to_world_cs
-        self._tf_world_to_geometry_cs = new_tf_world_to_geometry
+        self._tf_world_to_geometry_cs = new_tf_world_to_geometry_cs
 
     def add_contour_corner_world_cs(self, additional_corner_world_cs: np.array):
         # TODO Docstring
@@ -891,4 +919,29 @@ class GeometryContour:
                 y_min = point[1]
 
         return y_min
+
+    def _get_translation_from_tf(self, tf_matrix: np.array) -> np.array:
+        """
+        Method for getting the translation vector of the transformation matrix.
+
+        :param tf_matrix: transformation matrix in a 3x3 shape
+        :type tf_matrix: np.array
+        :return: translation vector in a 2x1 shape
+        :rtype: np.array
+        """
+        translation_vector: np.array = tf_matrix[0:2, 2]  # 0:2 because 0 is included but 2 not. So it is 0 to 1.
+        return translation_vector
+
+    def _get_rotation_from_tf(self, tf_matrix: np.array) -> float:
+        """
+        Method for getting the rotation value from the transformation matrix
+
+        :param tf_matrix: transformation matrix in a 3x3 shape
+        :type tf_matrix: np.array
+        :return: rotation value in radian
+        :rtype: float
+        """
+        rotation: float = atan2(tf_matrix[1, 0], tf_matrix[0, 0])
+        return rotation
+
     # endregion
