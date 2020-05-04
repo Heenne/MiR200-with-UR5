@@ -11,6 +11,8 @@ from geometry_info.geometry_contour import GeometryContour
 from geometry_info.movable_object import MovableObject, Box, Cylinder, IsoscelesTriangle, RightAngledTriangle
 from geometry_info.MuR205 import MuR205
 
+from optimization_data_classes import MuR205PoseOptimizationInfo
+
 from urdf_reader import URDFReader
 from urdf_reader import GeometryType
 from launch_reader import LaunchReader
@@ -117,9 +119,9 @@ def calculate_fitness_sum_of_ur5_base_population(ur5_base_contour_population: li
 def mutate_geometry_contour(contour_to_mutate: GeometryContour,
                             min_mutation: float,
                             max_mutation: float,
-                            border_contour: GeometryContour) -> GeometryContour:
+                            border_contour: GeometryContour):
     """[summary]
-
+    TODO
     :param contour_to_mutate: [description]
     :type contour_to_mutate: GeometryContour
     :param min_mutation: [description]
@@ -162,8 +164,6 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
     #           contour_to_mutate.corner_point_list[index_of_mutated_corner][1],
     #           color=mcolors.CSS4_COLORS["pink"],
     #           marker="o")
-
-    return contour_to_mutate
 
 
 def mutate_geometry_contour_with_dead_zones(contour_to_mutate: GeometryContour,
@@ -310,7 +310,7 @@ if __name__ == '__main__':
                                                                  NUMBER_OF_ROBOTS)
 
     # 100 is just a good middle value where the corners have time to get further apart and its still relativly quick
-    for cylce_counter in range(0, 50):
+    for cylce_counter in range(0, 100):
         # Create mating pool
         fitness_sum: float = calculate_fitness_sum_of_grip_population(grip_contour_population,
                                                                       centroid_object_to_move_world_cs)
@@ -328,7 +328,7 @@ if __name__ == '__main__':
             mating_pool.append(grip_contour_population[random.randrange(0, len(grip_contour_population))])
 
         # Crossover of parents
-        next_gen: list = list()
+        next_gen: List[GeometryContour] = list()
         while len(mating_pool) > 1:
             first_parent_index: int = random.randrange(0, len(mating_pool))
             first_parent: GeometryContour = mating_pool.pop(first_parent_index)
@@ -364,7 +364,7 @@ if __name__ == '__main__':
             child_mutation_chance: float = random.random()
 
             if child_mutation_chance < MUTATION_CHANCE:  # Mutation
-                child = mutate_geometry_contour(child, MIN_STEP_SIZE, MAX_STEP_SIZE, grip_area)
+                mutate_geometry_contour(child, MIN_STEP_SIZE, MAX_STEP_SIZE, grip_area)
 
         # Survivor selection
         total_population: dict = dict()
@@ -398,7 +398,7 @@ if __name__ == '__main__':
         posible_ur5_base_link_pose_list.append(temp)
 
     # Initialization
-    ur5_base_link_population: list = list()
+    ur5_base_link_population: List[GeometryContour] = list()
 
     for population_member_counter in range(0, MAX_POPULATION):
         ur5_base_link_pose_contour: GeometryContour = GeometryContour()
@@ -420,7 +420,7 @@ if __name__ == '__main__':
         # Create mating pool
         ur5_base_fitness_sum: float = calculate_fitness_sum_of_ur5_base_population(ur5_base_link_population)
 
-        mating_pool: list = list()
+        mating_pool: List[GeometryContour] = list()
         for ur5_base_link_contour in ur5_base_link_population:
             contour_fitness: float = calculate_fitness_of_ur5_base_contour(ur5_base_link_contour)
             mating_pool_chance: float = contour_fitness / ur5_base_fitness_sum
@@ -508,8 +508,9 @@ if __name__ == '__main__':
     mir_contour.move_mur205_by_ur5_base_link(best_grip_contour.corner_point_list_world_cs[0], -(pi/2))
     mir_contour.plot_edges(color="black")
 
-    mir_contour.rotate_relative_around_ur5_base_cs(pi/4)
+    mir_contour.rotate_relative_around_ur5_base_cs((3*pi)/4)
     mir_contour.plot_edges(color="pink")
+    print(mir_contour.is_contour_colliding(object_to_move))
 
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
 

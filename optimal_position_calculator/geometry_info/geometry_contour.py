@@ -72,7 +72,7 @@ class GeometryContour:
         return self._geometry_cs_rotation
 
     @property
-    def corner_point_list_geometry_cs(self) -> list:
+    def corner_point_list_geometry_cs(self) -> List[np.array]:
         """List of all corners of the contour.
         Corner points are specified in the geometry coordinate system.
 
@@ -82,7 +82,7 @@ class GeometryContour:
         return self._corner_point_list_geometry_cs
 
     @property
-    def corner_point_list_world_cs(self) -> list:
+    def corner_point_list_world_cs(self) -> List[np.array]:
         """List of all corners of the contour.
         Corner points are specified in the world coordinate system.
 
@@ -92,7 +92,7 @@ class GeometryContour:
         return [self.transform_vector_geometry_to_world_cs(corner) for corner in self.corner_point_list_geometry_cs]
 
     @property
-    def edge_list_geometry_cs(self) -> list:
+    def edge_list_geometry_cs(self) -> List[EdgeInfo]:
         """List of all edge elements which are stored as EdgeInfo objects.
         The edge vectors are not specified directly in a coordinate system but the start_point of
         each edge is specified in the geometry coordinate system.
@@ -103,7 +103,7 @@ class GeometryContour:
         return self._edge_list_geometry_cs
 
     @property
-    def edge_list_world_cs(self) -> list:
+    def edge_list_world_cs(self) -> List[EdgeInfo]:
         """List of all edge elements which are stored as EdgeInfo objects.
         The edge vectors are not specified directly in a coordinate system but the start_point of
         each edge is specified in the world coordinate system.
@@ -190,7 +190,7 @@ class GeometryContour:
     # endregion
 
     # region Geometry handling methods
-    def import_contour_with_offset(self, contour: 'GeometryContour', offset_value: float):
+    def import_contour_with_offset(self, contour: 'GeometryContour', offset_value: float) -> None:
         # TODO Docstring
         self._set_geometry_transformations(contour.lead_vector_world_cs, contour.world_to_geometry_rotation)
 
@@ -232,7 +232,7 @@ class GeometryContour:
 
         self.create_contour_edges()
 
-    def _set_geometry_transformations(self, lead_vector_world_cs: np.array, geometry_cs_rotation: float):
+    def _set_geometry_transformations(self, lead_vector_world_cs: np.array, geometry_cs_rotation: float) -> None:
         """Method for setting transformation from geometry cs to world and other way around.
 
         :param lead_vector_world_cs: geometric centroid of the contour
@@ -243,10 +243,6 @@ class GeometryContour:
         self._lead_vector_world_cs = lead_vector_world_cs
         self._geometry_cs_rotation = geometry_cs_rotation
 
-        # self._tf_geometry_to_world_cs = np.array(
-        #     [[cos(geometry_cs_rotation), -sin(geometry_cs_rotation), lead_vector_world_cs[0]],
-        #      [sin(geometry_cs_rotation), cos(geometry_cs_rotation), lead_vector_world_cs[1]],
-        #      [0, 0, 1]])
         self._tf_geometry_to_world_cs: np.array = self._create_transformation_matrix(lead_vector_world_cs,
                                                                                      geometry_cs_rotation)
         self._tf_world_to_geometry_cs = np.linalg.inv(self._tf_geometry_to_world_cs)
@@ -268,10 +264,6 @@ class GeometryContour:
         :param new_geometry_cs_rotation: Rotation of the world cs to geometry cs
         :type new_geometry_cs_rotation: float
         """
-        # new_tf_geometry_to_world_cs: np.array = np.array(
-        #     [[cos(new_geometry_cs_rotation), -sin(new_geometry_cs_rotation), new_lead_vector_world_cs[0]],
-        #      [sin(new_geometry_cs_rotation), cos(new_geometry_cs_rotation), new_lead_vector_world_cs[1]],
-        #      [0, 0, 1]])
         new_tf_geometry_to_world_cs: np.array = self._create_transformation_matrix(new_lead_vector_world_cs,
                                                                                    new_geometry_cs_rotation)
         new_tf_world_to_geometry: np.array = np.linalg.inv(new_tf_geometry_to_world_cs)
@@ -291,7 +283,7 @@ class GeometryContour:
         self._corner_point_list_geometry_cs = corner_point_list_new_geometry_cs
         self.create_contour_edges()
 
-    def move_contour(self, new_lead_vector_world_cs: np.array, new_geometry_cs_rotation: float):
+    def move_contour(self, new_lead_vector_world_cs: np.array, new_geometry_cs_rotation: float) -> None:
         """
         This method sets the translation and rotation of the geometry coordination system.
         The points defined in the geometry cs stay the same.
@@ -514,14 +506,36 @@ class GeometryContour:
         return False
 
     def transform_vector_world_to_geometry_cs(self, vector_world_cs: np.array) -> np.array:
+        # TODO Docstring
         ext_vector_world_cs: np.array = np.append(vector_world_cs, [1])
         ext_vector_geometry_cs: np.array = self._tf_world_to_geometry_cs.dot(ext_vector_world_cs)
         return ext_vector_geometry_cs[:-1]
 
     def transform_vector_geometry_to_world_cs(self, vector_geometry_cs: np.array) -> np.array:
+        # TODO Docstring
         ext_vector_geometry_cs: np.array = np.append(vector_geometry_cs, [1])
         ext_vector_world_cs: np.array = self._tf_geometry_to_world_cs.dot(ext_vector_geometry_cs)
         return ext_vector_world_cs[:-1]
+
+    def is_contour_colliding(self, contour_to_check: "GeometryContour") -> bool:
+        # TODO Docstring
+        # Faster and easier check is if a corner is in the other contour.
+        # If a corner point is in the contour, there is a collision
+        for corner in self.corner_point_list_world_cs:
+            if contour_to_check.is_world_cs_point_in_contour(corner):
+                return True
+
+        # If no corner of the current contour is in the other contour.
+        # Check if an edge of one contour is colliding with an edge of the other contour
+        for current_edge_world_cs in self.edge_list_world_cs:
+            for edge_to_check_world_cs in self.edge_list_world_cs:
+                if self.calc_vector_intersection_point(current_edge_world_cs.start_point,
+                                                       current_edge_world_cs.edge_vector,
+                                                       edge_to_check_world_cs.start_point,
+                                                       edge_to_check_world_cs.edge_vector) is not None:
+                    return True
+
+        return False
 
     # endregion
 
@@ -789,6 +803,27 @@ class GeometryContour:
         # TODO Docstring
         shortest_edge: EdgeInfo = self.get_shortest_edge()
         return np.linalg.norm(shortest_edge.edge_vector)
+
+    def calc_farthest_corner_to_point(self, point_world_cs: np.array) -> np.array:
+        # TODO Docstring
+        # Initialize the best values with the first point in the corner list
+        farthest_point: np.array = self.corner_point_list_world_cs[0]
+        farthest_distance: float = np.linalg.norm(point_world_cs - farthest_point)
+
+        for corner in self.corner_point_list_world_cs:
+            corner_to_point_vector: np.array = point_world_cs - corner
+            distance: float = np.linalg.norm(corner_to_point_vector)
+
+            if distance > farthest_distance:
+                farthest_point = corner
+                farthest_distance = distance
+
+        return farthest_point
+
+    def calc_farthest_distance_corner_to_point(self, point_world_cs: np.array) -> float:
+        # TODO Docstring
+        farthest_point: np.array = self.calc_farthest_corner_to_point(point_world_cs)
+        return np.linalg.norm(farthest_point)
 
     # endregion
 
