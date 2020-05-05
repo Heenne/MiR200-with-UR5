@@ -325,11 +325,21 @@ class GeometryContour:
             additional_corner_world_cs)
         self.add_contour_corner_geometry_cs(additional_corner_geometry_cs)
 
+    def add_contour_corner_list_world_cs(self, additional_corner_list_world_cs: List[np.array]):
+        # TODO Docstring
+        additional_corner_list_geometry_cs: List[np.array] = [self.transform_vector_world_to_geometry_cs(corner)
+                                                              for corner in additional_corner_list_world_cs]
+        self.add_contour_corner_list_geometry_cs(additional_corner_list_geometry_cs)
+
     def add_contour_corner_geometry_cs(self, additional_corner_geometry_cs: np.array):
         # TODO Docstring
         self._corner_point_list_geometry_cs.append(additional_corner_geometry_cs)
         self.create_contour_edges()
-        # TODO update the centroid point and transformation matrix here
+
+    def add_contour_corner_list_geometry_cs(self, additional_corner_list_geometry_cs: List[np.array]):
+        # TODO Docstring
+        self._corner_point_list_geometry_cs.extend(additional_corner_list_geometry_cs)
+        self.create_contour_edges()
 
     def replace_contour_corner_world_cs(self, corner_index: int, new_corner_point_world_cs: np.array):
         # TODO Docstring
@@ -807,18 +817,18 @@ class GeometryContour:
     def calc_farthest_corner_to_point(self, point_world_cs: np.array) -> np.array:
         # TODO Docstring
         # Initialize the best values with the first point in the corner list
-        farthest_point: np.array = self.corner_point_list_world_cs[0]
-        farthest_distance: float = np.linalg.norm(point_world_cs - farthest_point)
+        farthest_point_world_cs: np.array = self.corner_point_list_world_cs[0]
+        farthest_distance: float = np.linalg.norm(point_world_cs - farthest_point_world_cs)
 
         for corner in self.corner_point_list_world_cs:
             corner_to_point_vector: np.array = point_world_cs - corner
             distance: float = np.linalg.norm(corner_to_point_vector)
 
             if distance > farthest_distance:
-                farthest_point = corner
+                farthest_point_world_cs = corner
                 farthest_distance = distance
 
-        return farthest_point
+        return farthest_point_world_cs
 
     def calc_farthest_distance_corner_to_point(self, point_world_cs: np.array) -> float:
         # TODO Docstring

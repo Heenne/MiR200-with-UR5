@@ -12,3 +12,6 @@ class MuR205PoseOptimizationInfo:
     # Contains a list with all MiR205 contours
     # Each contour belongs to one corner of the ur5_base_link_pose_contour GeometryContour
     mur205_contour_list: List[MuR205]
+
+    # Cannot insert this object in key. So storing fitness here this will fix it for now
+    fitness: float

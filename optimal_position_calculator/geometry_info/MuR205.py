@@ -66,7 +66,7 @@ class MuR205(GeometryContour):
     # endregion
 
     # region public methods
-    def move_mur205_by_ur5_base_link(self, ur5_lead_vector_world_cs: np.array, mur205_rotation_world_cs: float):
+    def move_mur205_by_ur5_base_link(self, ur5_lead_vector_world_cs: np.array, mur205_rotation_world_cs: float = 0.0):
         tf_ur5_to_world_cs: np.array = self._create_transformation_matrix(ur5_lead_vector_world_cs,
                                                                           mur205_rotation_world_cs)
         new_tf_mir_to_world_cs: np.array = tf_ur5_to_world_cs.dot(self._tf_mir_to_ur5_cs)
@@ -79,12 +79,25 @@ class MuR205(GeometryContour):
 
     def rotate_relative_around_ur5_base_cs(self, relative_rotation_radian: float):
         # TODO Docstring
-        # when rotating around the ur5 base link remember to update the mir to world tf, lead vector and rotation!
         ur5_lead_vector_world_cs: np.array = self._get_translation_from_tf(self.tf_ur5_to_world_cs)
 
         new_tf_ur5_to_world_cs: np.array = self._create_transformation_matrix(
             ur5_lead_vector_world_cs,
             self._geometry_cs_rotation + relative_rotation_radian)
+
+        new_tf_mir_to_world_cs: np.array = new_tf_ur5_to_world_cs.dot(self._tf_mir_to_ur5_cs)
+
+        self._lead_vector_world_cs = self._get_translation_from_tf(new_tf_mir_to_world_cs)
+        self._geometry_cs_rotation = self._get_rotation_from_tf(new_tf_mir_to_world_cs)
+        self._tf_geometry_to_world_cs = new_tf_mir_to_world_cs
+        self._tf_world_to_geometry_cs = np.linalg.inv(new_tf_mir_to_world_cs)
+
+    def rotate_absolute_around_ur5_base_cs(self, absolute_rotation_radian: float):
+        # TODO Docstring
+        ur5_lead_vector_world_cs: np.array = self._get_translation_from_tf(self.tf_ur5_to_world_cs)
+
+        new_tf_ur5_to_world_cs: np.array = self._create_transformation_matrix(ur5_lead_vector_world_cs,
+                                                                              absolute_rotation_radian)
 
         new_tf_mir_to_world_cs: np.array = new_tf_ur5_to_world_cs.dot(self._tf_mir_to_ur5_cs)
 
