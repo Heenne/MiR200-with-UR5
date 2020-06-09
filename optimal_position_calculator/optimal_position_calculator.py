@@ -455,7 +455,9 @@ if __name__ == '__main__':
     sorted_total_population: list = sorted(total_population.items(), key=lambda member: member[1], reverse=True)
 
     best_grip_contour: GeometryContour = sorted_total_population[0][0]
-    best_grip_contour.plot_edges(color="green")
+    best_grip_contour.plot_edges(color="orange")
+    # best_grip_contour.plot_orthogonal_vector_centroid_to_edge(color="orange")
+    # object_to_move.plot_orthogonal_vector_centroid_to_edge(color="black")
 
     ur5_base_link_boundary_list: List[GeometryContour] = list()
     for corner_point_world_cs in best_grip_contour.corner_point_list_world_cs:
