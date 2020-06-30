@@ -24,8 +24,8 @@ def callback(root: Tk, selected_geometry_option: str, *args):
     changable_entry_1.grid(row=1, column=1, padx=5, pady=5)
 
     if selected_geometry_option == 'Box':
-        changable_label_1 = Label(root, text="Width: ", borderwidth=10)
-        changable_label_2 = Label(root, text="Length: ", borderwidth=10)
+        changable_label_1 = Label(root, text="Width factor: ", borderwidth=10)
+        changable_label_2 = Label(root, text="Length factor: ", borderwidth=10)
 
         changable_label_1.grid(row=1, column=0)
         changable_label_2.grid(row=2, column=0)
