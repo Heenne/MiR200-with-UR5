@@ -646,7 +646,10 @@ class GeometryContour:
         :return: 2x1 vector which resembles the vector from "orthogonal_point" to the line
         :rtype: np.array
         """
-        nominator: float = -(line[0] * lead_vector[0]) - (line[1] * lead_vector[1])
+        nominator: float = (orthogonal_point[0] * line[0] +
+                            orthogonal_point[1] * line[1] -
+                            line[0] * lead_vector[0] -
+                            line[1] * lead_vector[1])
         denominator: float = pow(line[0], 2) + pow(line[1], 2)
 
         factor: float
@@ -656,7 +659,7 @@ class GeometryContour:
             print("Divided by zero in the 'calculate_orthogonal_vector_point_to_line' method!")
             return None
 
-        point_on_line: np.array = orthogonal_point + lead_vector + factor * line
+        point_on_line: np.array = lead_vector + factor * line
         vector_point_to_line: np.array = point_on_line - orthogonal_point
         return vector_point_to_line
 
@@ -883,16 +886,17 @@ class GeometryContour:
     def plot_orthogonal_vector_centroid_to_edge(self, **kwargs):
         # TODO Docstring
         block: bool = self._check_if_block_exists(**kwargs)
+        color: str = self._check_if_color_exists(**kwargs)
         centroid_geometry_cs: np.array = self.calc_centroid_geometry_cs()
         centroid_world_cs: np.array = self.transform_vector_geometry_to_world_cs(centroid_geometry_cs)
         for edge in self._edge_list_geometry_cs:
             orthogonal_vector: np.array = self.calc_ortho_vector_point_to_line(centroid_geometry_cs,
                                                                                edge.edge_vector,
                                                                                edge.start_point)
-            orthogonal_vector = self.extend_vector_by_length(orthogonal_vector, 0.3)
+            # orthogonal_vector = self.extend_vector_by_length(orthogonal_vector, 0.3)
             plot.plot([centroid_world_cs[0], centroid_world_cs[0] + orthogonal_vector[0]],
                       [centroid_world_cs[1], centroid_world_cs[1] + orthogonal_vector[1]],
-                      "g-")
+                      color)
 
         plot.show(block=block)
 
