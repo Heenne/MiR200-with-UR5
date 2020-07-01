@@ -100,8 +100,8 @@ if __name__ == '__main__':
     offset_rotation:float = 0.0
     # distance_from_centroid: float = random.uniform(0.01, 0.5)
     for counter in range(0, NUMBER_OF_ROBOTS):
-        grip_point: np.array = np.array([distance_from_centroid * cos((angle_diff_between_robot * counter) + (pi / 180) + offset_rotation),
-                                         distance_from_centroid * sin((angle_diff_between_robot * counter) + (pi / 180) + offset_rotation)])
+        grip_point: np.array = np.array([(distance_from_centroid + random.uniform(0,0.1)) * cos((angle_diff_between_robot * counter) + (pi / 180) + offset_rotation),
+                                         (distance_from_centroid + random.uniform(0,0.1)) * sin((angle_diff_between_robot * counter) + (pi / 180) + offset_rotation)])
         grip_point_area.add_contour_corner(grip_point)
 
     # grip_point_area.plot_corners(color="green", marker_size=10)
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     # Multiple problems! Nimmt am Ende immer die gleiche Seite, obwohl diese nichtmehr verbessert werden kann.
     # Lokale Minima werden angenommen und Optimierer kommt da nichtmehr raus
 
-    for counter in range(0, 4):
+    for counter in range(0, 10):
         # closest_edge: EdgeInfo = grip_point_area.get_closest_edge_to_point(centroid_object_to_move)
         # index_of_corner: int = grip_point_area.get_index_of_corner(closest_edge.start_point)  # Move start point
         index_of_corner: int = counter % NUMBER_OF_ROBOTS
@@ -141,14 +141,65 @@ if __name__ == '__main__':
             l[line_counter] = grip_point_area.calculate_distance_point_to_line(centroid_object_to_move,
                                                                                grip_edge.edge_vector,
                                                                                grip_edge.start_point)
-        print("A:")
-        print(A)
-        print("l:")
-        print(l)
+        # print("A:")
+        # print(A)
+        # print("l:")
+        # print(l)
         F: np.array = np.linalg.pinv(A).dot(l)
-        print("F:")
-        print(F)
-        print(np.linalg.pinv(A).dot(l))
+        # print("F:")
+        # print(F)
+        # print(np.linalg.pinv(A).dot(l))
+
+        F_ideal: float = 1/NUMBER_OF_ROBOTS
+        F_diff: np.array = np.zeros(NUMBER_OF_ROBOTS, dtype=float)
+        for inner_counter in range(0, NUMBER_OF_ROBOTS):
+            F_diff[inner_counter] = abs(F_ideal-F[inner_counter])
+
+        F_max_diff: float = np.amax(F_diff)
+        F_abs_max_diff: float = abs((1/NUMBER_OF_ROBOTS)-1.0)
+
+        g_stabi: float = F_max_diff / F_abs_max_diff
+
+        print("Stabi Gütewert:")
+        print(g_stabi)
+
+        shortest_distances: np.array = np.zeros(NUMBER_OF_ROBOTS)
+        for index, grip_point in enumerate(grip_point_area.corner_point_list):
+            shortest_distance: float = grip_area.calculate_distance_point_to_line(grip_point,
+                                                                                  grip_area.edge_list[0].edge_vector,
+                                                                                  grip_area.edge_list[0].start_point)
+            for edge in grip_area.edge_list:
+                distance: float = grip_area.calculate_distance_point_to_line(grip_point,
+                                                                             edge.edge_vector,
+                                                                             edge.start_point)
+                if distance < shortest_distance:
+                    shortest_distance = distance
+
+            shortest_distances[index] = shortest_distance
+
+        print("Shortest distances:")
+        print(shortest_distances)
+
+        abs_farthest_distance: float = grip_area.calculate_distance_point_to_line(centroid_object_to_move,
+                                                                                  grip_area.edge_list[0].edge_vector,
+                                                                                  grip_area.edge_list[0].start_point)
+        for edge in grip_area.edge_list:
+            distance: float = grip_area.calculate_distance_point_to_line(centroid_object_to_move,
+                                                                         edge.edge_vector,
+                                                                         edge.start_point)
+            if distance > abs_farthest_distance:
+                abs_farthest_distance = distance
+
+        print("abs farthest distance:")
+        print(abs_farthest_distance)
+
+        g_kante: float = np.mean(shortest_distances) / abs_farthest_distance
+
+        print("Kante Gütewert:")
+        print(g_kante)
+
+        g_total = 10*g_stabi + g_kante
+        #Right fitness calc end
 
         best_result: float = 100000000
         best_point: np.array = np.array([])
@@ -161,15 +212,100 @@ if __name__ == '__main__':
                 continue
 
             # plot.plot(grid_point[0], grid_point[1], marker="o", color=mcolors.CSS4_COLORS["lightsteelblue"])
-            result: float = 0.0
-            for edge_info in copy_of_grip_point_area.edge_list:
-                distance: float = copy_of_grip_point_area.calculate_distance_point_to_line(centroid_object_to_move, edge_info.edge_vector, edge_info.start_point)
-                result = result + (1/pow(distance, 2))
+            # OLD FITNESS CALC
+            # result: float = 0.0
+            # for edge_info in copy_of_grip_point_area.edge_list:
+            #     distance: float = copy_of_grip_point_area.calculate_distance_point_to_line(centroid_object_to_move, edge_info.edge_vector, edge_info.start_point)
+            #     result = result + (1/pow(distance, 2))
+            # OLD FITNESS CALC
 
-            if best_result >= result:
-                best_result = result
+            # Right fitness calculation
+            A: np.array = np.zeros((NUMBER_OF_ROBOTS, NUMBER_OF_ROBOTS), dtype=float)
+            # F: np.array = np.zeros(NUMBER_OF_ROBOTS)
+            l: np.array = np.zeros(NUMBER_OF_ROBOTS, dtype=float)
+
+            for line_counter, grip_edge in enumerate(copy_of_grip_point_area.edge_list):
+                for column_counter, grip_corner in enumerate(copy_of_grip_point_area.corner_point_list):
+                    if np.array_equal(grip_corner, grip_edge.start_point) or \
+                            np.array_equal(grip_corner, grip_edge.end_point):
+                        A[line_counter, column_counter] = 0
+                    else:
+                        A[line_counter, column_counter] = \
+                            copy_of_grip_point_area.calculate_distance_point_to_line(grip_corner, grip_edge.edge_vector,
+                                                                                     grip_edge.start_point)
+                l[line_counter] = copy_of_grip_point_area.calculate_distance_point_to_line(centroid_object_to_move,
+                                                                                           grip_edge.edge_vector,
+                                                                                           grip_edge.start_point)
+            # print("A:")
+            # print(A)
+            # print("l:")
+            # print(l)
+            F: np.array = np.linalg.pinv(A).dot(l)
+            # print("F:")
+            # print(F)
+            # print(np.linalg.pinv(A).dot(l))
+
+            F_ideal: float = 1 / NUMBER_OF_ROBOTS
+            F_diff: np.array = np.zeros(NUMBER_OF_ROBOTS, dtype=float)
+            for inner_counter in range(0, NUMBER_OF_ROBOTS):
+                F_diff[inner_counter] = abs(F_ideal - F[inner_counter])
+
+            F_max_diff: float = np.amax(F_diff)
+            F_abs_max_diff: float = abs((1 / NUMBER_OF_ROBOTS) - 1.0)
+
+            g_stabi: float = F_max_diff / F_abs_max_diff
+
+            # print("Gütewert:")
+            # print(g_stabi)
+
+            shortest_distances: np.array = np.zeros(NUMBER_OF_ROBOTS)
+            for index, grip_point in enumerate(copy_of_grip_point_area.corner_point_list):
+                shortest_distance: float = grip_area.calculate_distance_point_to_line(grip_point,
+                                                                                      grip_area.edge_list[
+                                                                                          0].edge_vector,
+                                                                                      grip_area.edge_list[
+                                                                                          0].start_point)
+                for edge in grip_area.edge_list:
+                    distance: float = grip_area.calculate_distance_point_to_line(grip_point,
+                                                                                 edge.edge_vector,
+                                                                                 edge.start_point)
+                    if distance < shortest_distance:
+                        shortest_distance = distance
+
+                shortest_distances[index] = shortest_distance
+
+            # print("Shortest distances:")
+            # print(shortest_distances)
+
+            abs_farthest_distance: float = grip_area.calculate_distance_point_to_line(centroid_object_to_move,
+                                                                                      grip_area.edge_list[
+                                                                                          0].edge_vector,
+                                                                                      grip_area.edge_list[
+                                                                                          0].start_point)
+            for edge in grip_area.edge_list:
+                distance: float = grip_area.calculate_distance_point_to_line(centroid_object_to_move,
+                                                                             edge.edge_vector,
+                                                                             edge.start_point)
+                if distance > abs_farthest_distance:
+                    abs_farthest_distance = distance
+
+            # print("abs farthest distance:")
+            # print(abs_farthest_distance)
+
+            g_kante: float = np.mean(shortest_distances) / abs_farthest_distance
+
+            # print("Kante Gütewert:")
+            # print(g_kante)
+
+            g_total = g_stabi + 2*g_kante
+            # Right fitness calc end
+
+            if g_total < best_result:
+                # print(g_total)
+                best_result = g_total
                 best_point = grid_point
 
+        print(best_result)
         grip_point_area.replace_contour_corner(index_of_corner, best_point)
         # if counter == 9:
         #     plot.plot(best_point[0], best_point[1], "ko")
