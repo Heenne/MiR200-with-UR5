@@ -2,9 +2,11 @@ import sys
 import os
 
 from matplotlib import pyplot as plot
-import random
 import numpy as np
+import random
 from math import sin, cos, pi
+import copy
+from matplotlib import colors as mcolors
 
 from geometry_info.geometry_contour import GeometryContour
 from geometry_info.movable_object import MovableObject, Box, Cylinder, IsoscelesTriangle, RightAngledTriangle
@@ -14,22 +16,22 @@ from urdf_reader import URDFReader
 from urdf_reader import GeometryType
 
 
-NUMBER_OF_ROBOTS: int = 4
+NUMBER_OF_ROBOTS: int = 3
 
 
 def plot_contour_info(object_to_move, extended_object_contour, grip_area):
     object_to_move.print_info()
-    object_to_move.plot_corners(block=False)
-    object_to_move.plot_edges(block=False)
-    object_to_move.plot_centroid(block=False)
+    # object_to_move.plot_corners(block=False)
+    object_to_move.plot_edges(block=False, color="black")
+    object_to_move.plot_centroid(block=False, color="red")
 
-    extended_object_contour.print_info()
-    extended_object_contour.plot_corners(block=False)
-    extended_object_contour.plot_edges(block=False)
-
+    # extended_object_contour.print_info()
+    # extended_object_contour.plot_corners(block=False)
+    # extended_object_contour.plot_edges(block=False)
+    #
     grip_area.print_info()
-    grip_area.plot_corners(block=False)
-    grip_area.plot_edges(block=False)
+    # grip_area.plot_corners(block=False)
+    grip_area.plot_edges(block=False, line_style="--", color="black")
 
 
 def create_grid(contour: GeometryContour) -> list:
@@ -92,29 +94,64 @@ if __name__ == '__main__':
     # init gripping positions
     grip_point_area: GeometryContour = GeometryContour()
     centroid_object_to_move: np.array = object_to_move.calculate_centroid()
-    init_distance_from_centroid: float = 0.1
+    distance_from_centroid: float = 0.1
     angle_diff_between_robot: float = (2*pi) / (NUMBER_OF_ROBOTS)
+    # offset_rotation: float = random.uniform((pi / 180), pi)
+    offset_rotation:float = 0.0
+    # distance_from_centroid: float = random.uniform(0.01, 0.5)
     for counter in range(0, NUMBER_OF_ROBOTS):
-        grip_point: np.array = np.array([init_distance_from_centroid * cos((angle_diff_between_robot * counter) + (pi / 180)),
-                                         init_distance_from_centroid * sin((angle_diff_between_robot * counter) + (pi / 180))])
+        grip_point: np.array = np.array([distance_from_centroid * cos((angle_diff_between_robot * counter) + (pi / 180) + offset_rotation),
+                                         distance_from_centroid * sin((angle_diff_between_robot * counter) + (pi / 180) + offset_rotation)])
         grip_point_area.add_contour_corner(grip_point)
 
-    grip_point_area.plot_corners()
-    grip_point_area.plot_edges()
+    # grip_point_area.plot_corners(color="green", marker_size=10)
+    # grip_point_area.plot_edges()
+    original_grip_point_area = copy.deepcopy(grip_point_area)
     # end init gripping position
 
     # Method for optimizing the gripping position
     # Multiple problems! Nimmt am Ende immer die gleiche Seite, obwohl diese nichtmehr verbessert werden kann.
     # Lokale Minima werden angenommen und Optimierer kommt da nichtmehr raus
 
-    for counter in range(0, 10):
-        closest_edge: EdgeInfo = grip_point_area.get_closest_edge_to_point(centroid_object_to_move)
-        index_of_corner: int = grip_point_area.get_index_of_corner(closest_edge.start_point)  # Move start point
-        plot.plot(closest_edge.start_point[0], closest_edge.start_point[1], "ko")
-        copy_of_grip_point_area: GeometryContour = grip_point_area
+    for counter in range(0, 4):
+        # closest_edge: EdgeInfo = grip_point_area.get_closest_edge_to_point(centroid_object_to_move)
+        # index_of_corner: int = grip_point_area.get_index_of_corner(closest_edge.start_point)  # Move start point
+        index_of_corner: int = counter % NUMBER_OF_ROBOTS
+        print(index_of_corner)
+        # distance_list: list = list()
+        # for edge in grip_point_area.edge_list:
+        #     distance_list.append(grip_point_area.calculate_distance_point_to_line(centroid_object_to_move, edge._edge_vector, edge._start_point))
+        # print("0: " + str(distance_list[0]) + " | 1: " + str(distance_list[1]) + " | 2: " + str(distance_list[2]))
+        # plot.plot(closest_edge.start_point[0], closest_edge.start_point[1], "ko")
+        copy_of_grip_point_area: GeometryContour = copy.deepcopy(grip_point_area)
+
+        # Right fitness calculation
+        A: np.array = np.zeros((NUMBER_OF_ROBOTS, NUMBER_OF_ROBOTS), dtype=float)
+        # F: np.array = np.zeros(NUMBER_OF_ROBOTS)
+        l: np.array = np.zeros(NUMBER_OF_ROBOTS, dtype=float)
+
+        for line_counter, grip_edge in enumerate(grip_point_area.edge_list):
+            for column_counter, grip_corner in enumerate(grip_point_area.corner_point_list):
+                if np.array_equal(grip_corner, grip_edge.start_point) or \
+                        np.array_equal(grip_corner, grip_edge.end_point):
+                    A[line_counter, column_counter] = 0
+                else:
+                    A[line_counter, column_counter] = \
+                        grip_point_area.calculate_distance_point_to_line(grip_corner, grip_edge.edge_vector, grip_edge.start_point)
+            l[line_counter] = grip_point_area.calculate_distance_point_to_line(centroid_object_to_move,
+                                                                               grip_edge.edge_vector,
+                                                                               grip_edge.start_point)
+        print("A:")
+        print(A)
+        print("l:")
+        print(l)
+        F: np.array = np.linalg.pinv(A).dot(l)
+        print("F:")
+        print(F)
+        print(np.linalg.pinv(A).dot(l))
 
         best_result: float = 100000000
-        best_point: np.array
+        best_point: np.array = np.array([])
         for grid_point in grid_point_list:
             copy_of_grip_point_area.replace_contour_corner(index_of_corner, grid_point)
             if not copy_of_grip_point_area.is_point_in_contour(centroid_object_to_move):
@@ -123,6 +160,7 @@ if __name__ == '__main__':
             if copy_of_grip_point_area.do_edges_intersect():
                 continue
 
+            # plot.plot(grid_point[0], grid_point[1], marker="o", color=mcolors.CSS4_COLORS["lightsteelblue"])
             result: float = 0.0
             for edge_info in copy_of_grip_point_area.edge_list:
                 distance: float = copy_of_grip_point_area.calculate_distance_point_to_line(centroid_object_to_move, edge_info.edge_vector, edge_info.start_point)
@@ -133,10 +171,14 @@ if __name__ == '__main__':
                 best_point = grid_point
 
         grip_point_area.replace_contour_corner(index_of_corner, best_point)
+        # if counter == 9:
+        #     plot.plot(best_point[0], best_point[1], "ko")
     # end method for optimizing grip position
 
-    grip_point_area.plot_corners()
+    grip_point_area.plot_corners(color="green", marker_size=10)
     grip_point_area.plot_edges()
+    # original_grip_point_area.plot_corners(color="green")
+    # original_grip_point_area.plot_edges()
 
     ur5_base_link_pose_list_list: list = list()
 
@@ -159,33 +201,6 @@ if __name__ == '__main__':
     # Random einen Punkt in einer Punktwolke auswählen
     # Anschließend wieder alle bis auf einen Punkt statisch machen und den einen optimieren.
     # Danach den nächsten Punkt verschieben usw.
-    optimized_grip_contour: GeometryContour = GeometryContour()
-    # Get one random point from each list to start the optimizing process
-    for pose_list in ur5_base_link_pose_list_list:
-        length_of_list: int = len(ur5_base_link_pose_list_list)
-        random_index: int = random.randint(0, length_of_list)
-        optimized_grip_contour.add_contour_corner(pose_list[random_index])
-
-    for counter in range(0, 20):
-        corner_to_change: int = counter % 4  # 0 = first corner and so on
-        print(corner_to_change)
-        current_area: float = optimized_grip_contour.calculate_area()
-        current_point: np.array = optimized_grip_contour.corner_point_list[corner_to_change]
-
-        best_area: float = current_area
-        best_point: np.array = current_point
-        copy_contour: GeometryContour = optimized_grip_contour
-        for point in ur5_base_link_pose_list_list[corner_to_change]:  # First corner comes from the first list and so on
-            copy_contour.replace_contour_corner(corner_to_change, point)
-            if best_area > copy_contour.calculate_area():
-                best_area = copy_contour.calculate_area()
-                best_point = point
-
-        if best_point is not current_point:
-            optimized_grip_contour.replace_contour_corner(corner_to_change, best_point)
-
-    optimized_grip_contour.plot_corners()
-    optimized_grip_contour.plot_edges()
 
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
 

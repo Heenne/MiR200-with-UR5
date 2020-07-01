@@ -3,6 +3,7 @@ import sys
 from abc import ABC, abstractclassmethod
 from matplotlib import pyplot as plot
 import numpy as np
+from matplotlib import colors as mcolors
 
 from geometry_info.edge_info import EdgeInfo
 
@@ -41,13 +42,13 @@ class GeometryContour:
 
             orthogonal_before_edge: np.array = self.calculate_orthogonal_vector_point_to_line(orthogonal_point=centroid,
                                                                                               line=before_edge.edge_vector,
-                                                                                              start_point_line=before_edge.start_point)
+                                                                                              lead_vector=before_edge.start_point)
 
             extended_orthogonal_before_edge: np.array = self.extend_vector_by_length(orthogonal_before_edge, offset_value)
 
             orthogonal_current_edge: np.array = self.calculate_orthogonal_vector_point_to_line(orthogonal_point=centroid,
                                                                                                line=current_edge.edge_vector,
-                                                                                               start_point_line=current_edge.start_point)
+                                                                                               lead_vector=current_edge.start_point)
 
             extended_orthogonal_current_edge: np.array = self.extend_vector_by_length(orthogonal_current_edge, offset_value)
 
@@ -135,18 +136,34 @@ class GeometryContour:
         centroid_point: np.array = np.array([x_centroid, y_centroid])
         return centroid_point
 
-    def calculate_orthogonal_vector_point_to_line(self, orthogonal_point: np.array, line: np.array, start_point_line: np.array) -> np.array:
-        nominator: float = -(line[0] * start_point_line[0]) - (line[1] * start_point_line[1])
+    def calculate_orthogonal_vector_point_to_line(self, orthogonal_point: np.array, line: np.array, lead_vector: np.array) -> np.array:
+        # nominator: float = -(line[0] * start_point_line[0]) - (line[1] * start_point_line[1])
+        # denominator: float = pow(line[0], 2) + pow(line[1], 2)
+        #
+        # factor: float
+        # try:
+        #     factor = nominator / denominator
+        # except ZeroDivisionError:
+        #     print("Devided by zero in the 'calculate_orthogonal_vector_point_to_line' method!")
+        #     return None
+        #
+        # point_on_line: np.array = orthogonal_point + start_point_line + factor * line
+        # vector_point_to_line: np.array = point_on_line - orthogonal_point
+        # return vector_point_to_line
+        nominator: float = (orthogonal_point[0] * line[0] +
+                            orthogonal_point[1] * line[1] -
+                            line[0] * lead_vector[0] -
+                            line[1] * lead_vector[1])
         denominator: float = pow(line[0], 2) + pow(line[1], 2)
 
         factor: float
         try:
             factor = nominator / denominator
         except ZeroDivisionError:
-            print("Devided by zero in the 'calculate_orthogonal_vector_point_to_line' method!")
+            print("Divided by zero in the 'calculate_orthogonal_vector_point_to_line' method!")
             return None
 
-        point_on_line: np.array = orthogonal_point + start_point_line + factor * line
+        point_on_line: np.array = lead_vector + factor * line
         vector_point_to_line: np.array = point_on_line - orthogonal_point
         return vector_point_to_line
 
@@ -301,14 +318,18 @@ class GeometryContour:
 
     def plot_corners(self, **kwargs):
         block: bool = self.check_if_block_exists(**kwargs)
-
+        color: str = self.check_if_color_exists(**kwargs)
+        corner_style: str = self.check_if_point_style_exists(**kwargs)
+        marker_size: float = self.check_if_marker_size_exists(**kwargs)
         for point in self._corner_point_list:
-            plot.plot(point[0], point[1], "bo")
+            plot.plot(point[0], point[1], color=color, marker=corner_style, markersize=marker_size)
 
         plot.show(block=block)
 
     def plot_edges(self, **kwargs):
         block: bool = self.check_if_block_exists(**kwargs)
+        line_style: str = self.check_if_line_style_exists(**kwargs)
+        color: str = self.check_if_color_exists(**kwargs)
 
         for edge in self._edge_list:
             x_start: float = edge.start_point[0]
@@ -316,15 +337,17 @@ class GeometryContour:
             end_point: np.array = edge.start_point + edge.edge_vector
             x_end: float = end_point[0]
             y_end: float = end_point[1]
-            plot.plot([x_start, x_end], [y_start, y_end], 'r-')
+            plot.plot([x_start, x_end], [y_start, y_end], color=color, linestyle=line_style)
 
         plot.show(block=block)
 
     def plot_centroid(self, **kwargs):
         block: bool = self.check_if_block_exists(**kwargs)
+        color: str = self.check_if_color_exists(**kwargs)
+        corner_style: str = self.check_if_point_style_exists(**kwargs)
 
         centroid_point: np.array = self.calculate_centroid()
-        plot.plot(centroid_point[0], centroid_point[1], "go")
+        plot.plot(centroid_point[0], centroid_point[1], color=color, marker=corner_style)
 
         plot.show(block=block)
 
@@ -343,3 +366,29 @@ class GeometryContour:
         if 'block' in kwargs:
             block = kwargs.get("block")
         return block
+
+    def check_if_line_style_exists(self, **kwargs) -> str:
+        line_style: str = '-'
+        if 'line_style' in kwargs:
+            line_style = kwargs.get("line_style")
+        return line_style
+
+    def check_if_point_style_exists(self, **kwargs) -> str:
+        point_style: str = 'o'
+        if 'point_style' in kwargs:
+            point_style = kwargs.get("point_style")
+        return point_style
+
+    def check_if_marker_size_exists(self, **kwargs) -> float:
+        marker_size: float = 5
+        if 'marker_size' in kwargs:
+            marker_size = kwargs.get("marker_size")
+        return marker_size
+
+    def check_if_color_exists(self, **kwargs) -> str:
+        # TODO Docstring
+        color: str = mcolors.CSS4_COLORS["red"]
+        if "color" in kwargs:
+            color = mcolors.CSS4_COLORS[str(kwargs.get("color"))]
+        return color
+
