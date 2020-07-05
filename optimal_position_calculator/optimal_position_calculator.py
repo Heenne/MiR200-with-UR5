@@ -1,7 +1,7 @@
 import os
 
 from matplotlib import pyplot as plot
-# from matplotlib import colors as mcolors
+from matplotlib import colors as mcolors
 import random
 import numpy as np
 from math import sin, cos, pi
@@ -23,17 +23,17 @@ NUMBER_OF_ROBOTS: int = 3
 
 def plot_contour_info(object_to_move, extended_object_contour, grip_area):
     object_to_move.print_info()
-    object_to_move.plot_corners(block=False)
-    object_to_move.plot_edges(block=False)
-    object_to_move.plot_centroid(block=False)
+    # object_to_move.plot_corners(block=False)
+    object_to_move.plot_edges(block=False, color="black")
+    # object_to_move.plot_centroid(block=False)
 
-    extended_object_contour.print_info()
-    extended_object_contour.plot_corners(block=False)
-    extended_object_contour.plot_edges(block=False)
+    # extended_object_contour.print_info()
+    # extended_object_contour.plot_corners(block=False)
+    # extended_object_contour.plot_edges(block=False)
 
-    grip_area.print_info()
-    grip_area.plot_corners(block=False)
-    grip_area.plot_edges(block=False)
+    # grip_area.print_info()
+    # grip_area.plot_corners(block=False)
+    grip_area.plot_edges(block=False, color="black", linestyle="dashed")
 
 
 def init_grip_point_contour(lead_vector_world_cs: np.array,
@@ -437,7 +437,7 @@ if __name__ == '__main__':
     grip_area.import_contour_with_offset(object_to_move, -0.1)
 
     centroid_object_to_move_world_cs: np.array = object_to_move.calc_centroid_world_cs()
-    plot.plot(centroid_object_to_move_world_cs[0], centroid_object_to_move_world_cs[1], "go")
+    object_to_move.plot_centroid(color="red")
 
     MAX_POPULATION: int = 50  # Dont specify odd amounts, allways even!
 
@@ -553,7 +553,8 @@ if __name__ == '__main__':
     sorted_total_population: list = sorted(total_population.items(), key=lambda member: member[1])
 
     best_grip_contour: GeometryContour = sorted_total_population[0][0]
-    best_grip_contour.plot_edges(color="orange")
+    best_grip_contour.plot_edges(color="grey")
+    best_grip_contour.plot_corners(color="green", markersize=10)
     # best_grip_contour.plot_orthogonal_vector_centroid_to_edge(color="orange")
     # object_to_move.plot_orthogonal_vector_centroid_to_edge(color="black")
 

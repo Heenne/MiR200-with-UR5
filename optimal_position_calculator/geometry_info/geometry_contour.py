@@ -856,8 +856,15 @@ class GeometryContour:
     def plot_corners(self, **kwargs):
         # TODO Docstring
         block: bool = self._check_if_block_exists(**kwargs)
+        color: str = self._check_if_color_exists(**kwargs)
+        marker: str = self._check_if_marker_exists(**kwargs)
+        markersize: float = self._check_if_markersize_exists(**kwargs)
         for point_world_cs in self.corner_point_list_world_cs:
-            plot.plot(point_world_cs[0], point_world_cs[1], "bo")
+            plot.plot(point_world_cs[0],
+                      point_world_cs[1],
+                      color=color,
+                      marker=marker,
+                      markersize=markersize)
 
         plot.show(block=block)
 
@@ -865,11 +872,12 @@ class GeometryContour:
         # TODO Docstring
         block: bool = self._check_if_block_exists(**kwargs)
         color: str = self._check_if_color_exists(**kwargs)
+        linestyle: str = self._check_if_linestyle_exists(**kwargs)
 
         for edge_world_cs in self.edge_list_world_cs:
             plot.plot([edge_world_cs.start_point[0], edge_world_cs.end_point[0]],
                       [edge_world_cs.start_point[1], edge_world_cs.end_point[1]],
-                      linestyle="-",
+                      linestyle=linestyle,
                       color=color)
 
         plot.show(block=block)
@@ -877,9 +885,16 @@ class GeometryContour:
     def plot_centroid(self, **kwargs):
         # TODO Docstring
         block: bool = self._check_if_block_exists(**kwargs)
+        color: str = self._check_if_color_exists(**kwargs)
+        marker: str = self._check_if_marker_exists(**kwargs)
+        markersize: float = self._check_if_markersize_exists(**kwargs)
 
         centroid_point_world_cs: np.array = self.calc_centroid_world_cs()
-        plot.plot(centroid_point_world_cs[0], centroid_point_world_cs[1], "go")
+        plot.plot(centroid_point_world_cs[0],
+                  centroid_point_world_cs[1],
+                  color=color,
+                  marker=marker,
+                  markersize=markersize)
 
         plot.show(block=block)
 
@@ -887,6 +902,7 @@ class GeometryContour:
         # TODO Docstring
         block: bool = self._check_if_block_exists(**kwargs)
         color: str = self._check_if_color_exists(**kwargs)
+        linestyle: str = self._check_if_linestyle_exists(**kwargs)
         centroid_geometry_cs: np.array = self.calc_centroid_geometry_cs()
         centroid_world_cs: np.array = self.transform_vector_geometry_to_world_cs(centroid_geometry_cs)
         for edge in self._edge_list_geometry_cs:
@@ -896,7 +912,8 @@ class GeometryContour:
             # orthogonal_vector = self.extend_vector_by_length(orthogonal_vector, 0.3)
             plot.plot([centroid_world_cs[0], centroid_world_cs[0] + orthogonal_vector[0]],
                       [centroid_world_cs[1], centroid_world_cs[1] + orthogonal_vector[1]],
-                      color)
+                      color=color,
+                      linestyle=linestyle)
 
         plot.show(block=block)
 
@@ -916,6 +933,27 @@ class GeometryContour:
         if "color" in kwargs:
             color = mcolors.CSS4_COLORS[str(kwargs.get("color"))]
         return color
+
+    def _check_if_linestyle_exists(self, **kwargs) -> str:
+        # TODO Docstring
+        linestyle: str = '-'
+        if 'linestyle' in kwargs:
+            linestyle = kwargs.get("linestyle")
+        return linestyle
+
+    def _check_if_marker_exists(self, **kwargs) -> str:
+        # TODO Docstring
+        marker: str = 'o'
+        if 'marker' in kwargs:
+            marker = kwargs.get("marker")
+        return marker
+
+    def _check_if_markersize_exists(self, **kwargs) -> float:
+        # TODO Docstring
+        markersize: float = 5
+        if 'markersize' in kwargs:
+            markersize = kwargs.get("markersize")
+        return markersize
 
     def _get_x_max_from_list(self, point_list: list) -> float:
         """Maximal x value of a list which is filled with points (2x1 np.array elements)
