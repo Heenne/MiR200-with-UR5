@@ -237,7 +237,8 @@ def calc_fitness_sum_mur205_population(mur205_pose_optimization_population: List
 def mutate_geometry_contour(contour_to_mutate: GeometryContour,
                             min_mutation: float,
                             max_mutation: float,
-                            border_contour: GeometryContour):
+                            border_contour: GeometryContour,
+                            centroid_object_to_move_world_cs: np.array):
     """[summary]
     TODO
     :param contour_to_mutate: [description]
@@ -248,6 +249,8 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
     :type max_mutation: float
     :param border_contour: [description]
     :type border_contour: GeometryContour
+    :param centroid_object_to_move_world_cs:
+    :type centroid_object_to_move_world_cs:
     :return: [description]
     :rtype: GeometryContour
     """
@@ -275,7 +278,12 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
             corner_to_mutate_geometry_cs[1] -= mutation_value_y
 
         if border_contour.is_geometry_cs_point_in_contour(corner_to_mutate_geometry_cs):
-            contour_to_mutate.replace_contour_corner_geometry_cs(index_of_mutated_corner, corner_to_mutate_geometry_cs)
+            # contour_to_mutate_copy: GeometryContour = deepcopy(contour_to_mutate)
+            # contour_to_mutate_copy.replace_contour_corner_geometry_cs(index_of_mutated_corner,
+            #                                                           corner_to_mutate_geometry_cs)
+            # if contour_to_mutate_copy.is_world_cs_point_in_contour(centroid_object_to_move_world_cs):
+            contour_to_mutate.replace_contour_corner_geometry_cs(index_of_mutated_corner,
+                                                                 corner_to_mutate_geometry_cs)
             corner_was_replaced = True
 
     # plot.plot(contour_to_mutate.corner_point_list[index_of_mutated_corner][0],
@@ -439,21 +447,29 @@ if __name__ == '__main__':
     centroid_object_to_move_world_cs: np.array = object_to_move.calc_centroid_world_cs()
     object_to_move.plot_centroid(color="red")
 
-    MAX_POPULATION: int = 50  # Dont specify odd amounts, allways even!
+    MAX_POPULATION: int = 20  # Dont specify odd amounts, allways even!
 
     # The values for MAX and MIN_STEP_SIZE are just randomly picked and tweeked so it worked good
     MAX_STEP_SIZE: float = round((grip_area.calc_longest_edge_length() / 5), 3)
     MIN_STEP_SIZE: float = MAX_STEP_SIZE / 50
     print("max step size: " + str(MAX_STEP_SIZE) + " | min step size: " + str(MIN_STEP_SIZE))
 
-    grip_contour_population: list = init_grip_contour_population(MAX_POPULATION,
+    grip_contour_population: List[GeometryContour] = init_grip_contour_population(MAX_POPULATION,
                                                                  centroid_object_to_move_world_cs,
                                                                  grip_area.calc_distance_closest_edge_to_point(
                                                                      centroid_object_to_move_world_cs),
                                                                  NUMBER_OF_ROBOTS)
 
+    for grip_contour in grip_contour_population:
+        grip_contour.plot_edges(color="grey")
+        grip_contour.plot_corners(color="green")
+    plot_contour_info(object_to_move, extended_object_contour, grip_area)
+    axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
+    axis.axis("equal")
+    object_to_move.plot_centroid(color="red", block=True)
+
     # 100 is just a good middle value where the corners have time to get further apart and its still relativly quick
-    for cylce_counter in range(0, 100):
+    for cylce_counter in range(0, 1):
         # Create mating pool
         fitness_sum: float = calculate_fitness_sum_of_grip_population(grip_contour_population,
                                                                       centroid_object_to_move_world_cs)
@@ -470,12 +486,14 @@ if __name__ == '__main__':
         # print("inverse sum:")
         # print(inverse_fitness_sum)
 
-        mating_pool: list = list()
+        mating_pool: List[GeometryContour] = list()
         for grip_contour in grip_contour_population:
             contour_fitness: float = calculate_fitness_of_grip_contour(grip_contour, centroid_object_to_move_world_cs)
             inverse_fitness: float = 1 / (contour_fitness / fitness_sum)
             mating_pool_chance: float = inverse_fitness / inverse_fitness_sum
             mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
+            print(mating_pool_chance)
+            print(mating_pool_instances)
 
             # mating_pool_chance: float = contour_fitness / fitness_sum
             # mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
@@ -516,6 +534,19 @@ if __name__ == '__main__':
             mur205_next_gen_population.append(first_child)
             mur205_next_gen_population.append(second_child)
 
+        # Plotting start
+        for grip_contour in grip_contour_population:
+            grip_contour.plot_edges(color="grey")
+            grip_contour.plot_corners(color="green")
+        for next_gen_contour in mur205_next_gen_population:
+            next_gen_contour.plot_edges(color="orange")
+            next_gen_contour.plot_corners(color="green")
+        plot_contour_info(object_to_move, extended_object_contour, grip_area)
+        axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
+        axis.axis("equal")
+        object_to_move.plot_centroid(color="red", block=True)
+        #Plotting end
+
         # Mutation
         MUTATION_CHANCE: float = 0.6
 
@@ -523,7 +554,29 @@ if __name__ == '__main__':
             child_mutation_chance: float = random.random()
 
             if child_mutation_chance < MUTATION_CHANCE:  # Mutation
-                mutate_geometry_contour(mur205_child_pose, MIN_STEP_SIZE, MAX_STEP_SIZE, grip_area)
+                # Plotting start
+                mur205_child_pose.plot_edges(color="grey")
+                mur205_child_pose.plot_corners(color="green")
+                print("before: " + str(calculate_fitness_of_grip_contour(mur205_child_pose,
+                                                                         centroid_object_to_move_world_cs)))
+                # Plotting end
+
+                mutate_geometry_contour(mur205_child_pose,
+                                        MIN_STEP_SIZE,
+                                        MAX_STEP_SIZE,
+                                        grip_area,
+                                        centroid_object_to_move_world_cs)
+
+                # Plotting start
+                print("after: " + str(calculate_fitness_of_grip_contour(mur205_child_pose,
+                                                                        centroid_object_to_move_world_cs)))
+                mur205_child_pose.plot_edges(color="orange")
+                mur205_child_pose.plot_corners(color="green")
+                plot_contour_info(object_to_move, extended_object_contour, grip_area)
+                axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
+                axis.axis("equal")
+                object_to_move.plot_centroid(color="red", block=True)
+                # Plotting end
 
         # Survivor selection
         total_population: dict = dict()
@@ -555,6 +608,18 @@ if __name__ == '__main__':
     best_grip_contour: GeometryContour = sorted_total_population[0][0]
     best_grip_contour.plot_edges(color="grey")
     best_grip_contour.plot_corners(color="green", markersize=10)
+    # Plotting start
+    for grip_contour in grip_contour_population:
+        grip_contour.plot_edges(color="grey")
+        grip_contour.plot_corners(color="green")
+    plot_contour_info(object_to_move, extended_object_contour, grip_area)
+    best_grip_contour.plot_edges(color="orange")
+    best_grip_contour.plot_corners(color="green", markersize=10)
+    axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
+    axis.axis("equal")
+    object_to_move.plot_centroid(color="red", block=True)
+    # Plotting end
+
     # best_grip_contour.plot_orthogonal_vector_centroid_to_edge(color="orange")
     # object_to_move.plot_orthogonal_vector_centroid_to_edge(color="black")
 
