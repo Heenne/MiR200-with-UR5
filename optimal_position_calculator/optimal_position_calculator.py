@@ -41,8 +41,8 @@ def create_grid(contour: GeometryContour) -> list:
     y_min_area: float = contour.get_y_min()
 
     grid_point_list: list = list()
-    x_list: np.array = np.arange(x_min_area, x_max_area, 0.05)  # Change to linspace and calculate how many points I want? Should be better as Internet tells
-    y_list: np.array = np.arange(y_min_area, y_max_area, 0.05)
+    x_list: np.array = np.arange(x_min_area, x_max_area, 0.03)  # Change to linspace and calculate how many points I want? Should be better as Internet tells
+    y_list: np.array = np.arange(y_min_area, y_max_area, 0.03)
     for x_counter in x_list:
         for y_counter in y_list:
             grid_point: np.array = np.array([x_counter, y_counter])
@@ -94,18 +94,18 @@ if __name__ == '__main__':
     # init gripping positions
     grip_point_area: GeometryContour = GeometryContour()
     centroid_object_to_move: np.array = object_to_move.calculate_centroid()
-    distance_from_centroid: float = 0.1
+    # distance_from_centroid: float = 0.1
     angle_diff_between_robot: float = (2*pi) / (NUMBER_OF_ROBOTS)
-    # offset_rotation: float = random.uniform((pi / 180), pi)
-    offset_rotation:float = 0.0
-    # distance_from_centroid: float = random.uniform(0.01, 0.5)
+    offset_rotation: float = random.uniform((pi / 180), pi)
+    # offset_rotation: float = 0.0
+    distance_from_centroid: float = random.uniform(0.3, 0.5)
     for counter in range(0, NUMBER_OF_ROBOTS):
         grip_point: np.array = np.array([(distance_from_centroid + random.uniform(0,0.1)) * cos((angle_diff_between_robot * counter) + (pi / 180) + offset_rotation),
                                          (distance_from_centroid + random.uniform(0,0.1)) * sin((angle_diff_between_robot * counter) + (pi / 180) + offset_rotation)])
         grip_point_area.add_contour_corner(grip_point)
 
-    # grip_point_area.plot_corners(color="green", marker_size=10)
-    # grip_point_area.plot_edges()
+    grip_point_area.plot_corners(color="green", marker_size=10)
+    grip_point_area.plot_edges()
     original_grip_point_area = copy.deepcopy(grip_point_area)
     # end init gripping position
 
@@ -297,7 +297,7 @@ if __name__ == '__main__':
             # print("Kante Gütewert:")
             # print(g_kante)
 
-            g_total = g_stabi + 2*g_kante
+            g_total = g_stabi + 1.0*g_kante
             # Right fitness calc end
 
             if g_total < best_result:
