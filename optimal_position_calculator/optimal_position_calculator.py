@@ -237,7 +237,8 @@ def calc_fitness_sum_mur205_population(mur205_pose_optimization_population: List
 def mutate_geometry_contour(contour_to_mutate: GeometryContour,
                             min_mutation: float,
                             max_mutation: float,
-                            border_contour: GeometryContour):
+                            border_contour: GeometryContour,
+                            centroid_object_to_move_world_cs: np.array):
     """[summary]
     TODO
     :param contour_to_mutate: [description]
@@ -248,6 +249,8 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
     :type max_mutation: float
     :param border_contour: [description]
     :type border_contour: GeometryContour
+    :param centroid_object_to_move_world_cs:
+    :type centroid_object_to_move_world_cs:
     :return: [description]
     :rtype: GeometryContour
     """
@@ -275,8 +278,13 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
             corner_to_mutate_geometry_cs[1] -= mutation_value_y
 
         if border_contour.is_geometry_cs_point_in_contour(corner_to_mutate_geometry_cs):
-            contour_to_mutate.replace_contour_corner_geometry_cs(index_of_mutated_corner, corner_to_mutate_geometry_cs)
-            corner_was_replaced = True
+            contour_to_mutate_copy: GeometryContour = deepcopy(contour_to_mutate)
+            contour_to_mutate_copy.replace_contour_corner_geometry_cs(index_of_mutated_corner,
+                                                                      corner_to_mutate_geometry_cs)
+            if contour_to_mutate_copy.is_world_cs_point_in_contour(centroid_object_to_move_world_cs):
+                contour_to_mutate.replace_contour_corner_geometry_cs(index_of_mutated_corner,
+                                                                     corner_to_mutate_geometry_cs)
+                corner_was_replaced = True
 
     # plot.plot(contour_to_mutate.corner_point_list[index_of_mutated_corner][0],
     #           contour_to_mutate.corner_point_list[index_of_mutated_corner][1],
