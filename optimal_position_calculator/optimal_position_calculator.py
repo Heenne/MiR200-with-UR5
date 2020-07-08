@@ -126,7 +126,7 @@ def calculate_fitness_of_grip_contour(grip_contour: GeometryContour,
 
     g_stabi: float = F_max_diff / F_abs_max_diff
 
-    print("Stabi Gütewert: " + str(g_stabi))
+    # print("Stabi Gütewert: " + str(g_stabi))
 
     shortest_distances: np.array = np.zeros(NUMBER_OF_ROBOTS)
     for index, grip_point_world_cs in enumerate(grip_contour.corner_point_list_world_cs):
@@ -160,10 +160,10 @@ def calculate_fitness_of_grip_contour(grip_contour: GeometryContour,
     # g_kante: float = float(np.mean(shortest_distances)) / abs_farthest_distance
     g_kante: float = np.amax(shortest_distances) / abs_farthest_distance
 
-    print("Kante Gütewert: " + str(g_kante))
+    # print("Kante Gütewert: " + str(g_kante))
 
     fitness = g_stabi + 2*g_kante
-    print("Total fitness: " + str(fitness))
+    # print("Total fitness: " + str(fitness))
     # Right fitness calc end
 
     return fitness
@@ -447,7 +447,7 @@ if __name__ == '__main__':
     centroid_object_to_move_world_cs: np.array = object_to_move.calc_centroid_world_cs()
     object_to_move.plot_centroid(color="red")
 
-    MAX_POPULATION: int = 50  # Dont specify odd amounts, allways even!
+    MAX_POPULATION: int = 20  # Dont specify odd amounts, allways even!
 
     # The values for MAX and MIN_STEP_SIZE are just randomly picked and tweeked so it worked good
     MAX_STEP_SIZE: float = round((grip_area.calc_longest_edge_length() / 5), 3)
@@ -461,7 +461,7 @@ if __name__ == '__main__':
                                                                  NUMBER_OF_ROBOTS)
 
     # 100 is just a good middle value where the corners have time to get further apart and its still relativly quick
-    for cylce_counter in range(0, 100):
+    for cylce_counter in range(0, 30):
         # Create mating pool
         fitness_sum: float = calculate_fitness_sum_of_grip_population(grip_contour_population,
                                                                       centroid_object_to_move_world_cs)
@@ -526,12 +526,15 @@ if __name__ == '__main__':
 
         # Mutation
         MUTATION_CHANCE: float = 0.6
-
         for mur205_child_pose in mur205_next_gen_population:
             child_mutation_chance: float = random.random()
 
             if child_mutation_chance < MUTATION_CHANCE:  # Mutation
-                mutate_geometry_contour(mur205_child_pose, MIN_STEP_SIZE, MAX_STEP_SIZE, grip_area)
+                mutate_geometry_contour(mur205_child_pose,
+                                        MIN_STEP_SIZE,
+                                        MAX_STEP_SIZE,
+                                        grip_area,
+                                        centroid_object_to_move_world_cs)
 
         # Survivor selection
         total_population: dict = dict()
@@ -553,6 +556,7 @@ if __name__ == '__main__':
             counter += 1
 
         grip_contour_population = next_population
+        print("Grip optimization: " + str(cylce_counter))
 
     total_population: dict = dict()
     for contour in grip_contour_population:
@@ -563,190 +567,189 @@ if __name__ == '__main__':
     best_grip_contour: GeometryContour = sorted_total_population[0][0]
     best_grip_contour.plot_edges(color="grey")
     best_grip_contour.plot_corners(color="green", markersize=10)
-    # best_grip_contour.plot_orthogonal_vector_centroid_to_edge(color="orange")
-    # object_to_move.plot_orthogonal_vector_centroid_to_edge(color="black")
 
-    # ur5_base_link_boundary_list: List[GeometryContour] = list()
-    # for corner_point_world_cs in best_grip_contour.corner_point_list_world_cs:
-    #     ur5_grip_boundary = create_circle_contour(corner_point_world_cs, 0.75)
-    #     ur5_grip_boundary.plot_edges(color="black")
-    #     ur5_base_link_boundary_list.append(ur5_grip_boundary)
-    #
-    # # Initialization
-    # mur205_optimization_population: List[MuR205PoseOptimizationInfo] = list()
-    #
-    # for population_member_counter in range(0, MAX_POPULATION):
-    #     # Create one object to contain all information for the optimization
-    #     # Member first contains default/empty elements
-    #     mur205_pose_opti_info: MuR205PoseOptimizationInfo = MuR205PoseOptimizationInfo(GeometryContour(),
-    #                                                                                    list(),
-    #                                                                                    0.0)
-    #     for ur5_base_link_boundary in ur5_base_link_boundary_list:
-    #         # Initialize the first member of the optimization info
-    #         # Pick a random point in the ur5 base link boundary that is valid
-    #         ur5_base_link_pose: np.array = np.array([0, 0])
-    #         point_valid: bool = False
-    #         while not point_valid:
-    #             x_pose = random.uniform(ur5_base_link_boundary.x_min_world_cs,
-    #                                     ur5_base_link_boundary.x_max_world_cs)
-    #             y_pose = random.uniform(ur5_base_link_boundary.y_min_world_cs,
-    #                                     ur5_base_link_boundary.y_max_world_cs)
-    #             ur5_base_link_pose = np.array([x_pose, y_pose])
-    #             if ur5_base_link_boundary.is_world_cs_point_in_contour(ur5_base_link_pose) and not \
-    #                     extended_object_contour.is_world_cs_point_in_contour(ur5_base_link_pose):
-    #                 mur205_pose_opti_info.ur5_base_link_pose_contour.add_contour_corner_world_cs(ur5_base_link_pose)
-    #                 point_valid = True
-    #
-    #         # Initialize the second member of the optimization info
-    #         # Pick a random orientation of the mir200 base that is valid
-    #         mur205_contour: MuR205 = MuR205()
-    #         mur205_contour.move_mur205_by_ur5_base_link(ur5_base_link_pose)
-    #
-    #         orientation_valid: bool = False
-    #         while not orientation_valid:
-    #             rand_orientation: float = random.uniform(0, (2 * pi))
-    #             mur205_contour.rotate_absolute_around_ur5_base_cs(rand_orientation)
-    #
-    #             if not mur205_contour.is_contour_colliding(object_to_move):
-    #                 mur205_pose_opti_info.mur205_contour_list.append(mur205_contour)
-    #                 orientation_valid = True
-    #
-    #     mur205_optimization_population.append(mur205_pose_opti_info)
-    #
-    # for counter in range(0, 40):
-    #     # Create mating pool
-    #     ur5_base_fitness_sum: float = calc_fitness_sum_mur205_population(
-    #         mur205_optimization_population,
-    #         ur5_base_link_boundary_list,
-    #         object_to_move.calc_centroid_world_cs())
-    #
-    #     mating_pool: List[MuR205PoseOptimizationInfo] = list()
-    #     for mur205_pose_opti_info in mur205_optimization_population:
-    #         contour_fitness: float = calc_fitness_mur205_positions(mur205_pose_opti_info,
-    #                                                                ur5_base_link_boundary_list,
-    #                                                                object_to_move.calc_centroid_world_cs())
-    #         mating_pool_chance: float = contour_fitness / ur5_base_fitness_sum
-    #         mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
-    #         for pool_instance_counter in range(0, mating_pool_instances):
-    #             mating_pool.append(mur205_pose_opti_info)
-    #
-    #     while len(mating_pool) < len(mur205_optimization_population):
-    #         mating_pool.append(mur205_optimization_population[
-    #                                random.randrange(0, len(mur205_optimization_population))])
-    #
-    #     mur205_next_gen_population: List[MuR205PoseOptimizationInfo] = list()
-    #     while len(mating_pool) > 1:
-    #         first_parent_index: int = random.randrange(0, len(mating_pool))
-    #         first_parent: MuR205PoseOptimizationInfo = mating_pool.pop(first_parent_index)
-    #         second_parent_index: int = random.randrange(0, len(mating_pool))
-    #         second_parent: MuR205PoseOptimizationInfo = mating_pool.pop(second_parent_index)
-    #
-    #         # Point for splitting the corners and giving them to the children.
-    #         # At least split between 1 and 2 or n-1 and n so at least one point will be separatd
-    #         gene_crossover_point: int = random.randrange(1, (len(first_parent.mur205_contour_list) - 1))
-    #
-    #         first_child: MuR205PoseOptimizationInfo = MuR205PoseOptimizationInfo(
-    #             GeometryContour(
-    #                 lead_vector_world_cs=first_parent.ur5_base_link_pose_contour.lead_vector_world_cs,
-    #                 world_to_geometry_cs_rotation=first_parent.ur5_base_link_pose_contour.world_to_geometry_rotation),
-    #             list(),
-    #             0.0)
-    #         second_child: MuR205PoseOptimizationInfo = MuR205PoseOptimizationInfo(
-    #             GeometryContour(
-    #                 lead_vector_world_cs=first_parent.ur5_base_link_pose_contour.lead_vector_world_cs,
-    #                 world_to_geometry_cs_rotation=first_parent.ur5_base_link_pose_contour.world_to_geometry_rotation),
-    #             list(),
-    #             0.0)
-    #
-    #         corner_point_list_length: int = len(first_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs)
-    #
-    #         first_child.ur5_base_link_pose_contour.add_contour_corner_list_geometry_cs(
-    #             first_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs[0:gene_crossover_point])
-    #         first_child.mur205_contour_list.extend(first_parent.mur205_contour_list[0:gene_crossover_point])
-    #
-    #         second_child.ur5_base_link_pose_contour.add_contour_corner_list_geometry_cs(
-    #             second_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs[0:gene_crossover_point])
-    #         second_child.mur205_contour_list.extend(second_parent.mur205_contour_list[0:gene_crossover_point])
-    #
-    #         first_child.ur5_base_link_pose_contour.add_contour_corner_list_geometry_cs(
-    #             second_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs[gene_crossover_point:
-    #                                                                                    corner_point_list_length])
-    #         first_child.mur205_contour_list.extend(second_parent.mur205_contour_list[gene_crossover_point:
-    #                                                                                  corner_point_list_length])
-    #
-    #         second_child.ur5_base_link_pose_contour.add_contour_corner_list_geometry_cs(
-    #             first_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs[gene_crossover_point:
-    #                                                                                   corner_point_list_length])
-    #         second_child.mur205_contour_list.extend(first_parent.mur205_contour_list[gene_crossover_point:
-    #                                                                                  corner_point_list_length])
-    #
-    #         mur205_next_gen_population.append(first_child)
-    #         mur205_next_gen_population.append(second_child)
-    #
-    #     # Mutation
-    #     MUTATION_CHANCE: float = 0.6
-    #     MAX_STEP_SIZE: float = 0.005
-    #     MIN_STEP_SIZE: float = 0.001
-    #     MAX_ROTATION: float = pi/4
-    #     MIN_ROTATION: float = pi/32
-    #
-    #     deadzone_list: List[GeometryContour] = list()
-    #     deadzone_list.append(extended_object_contour)
-    #
-    #     for mur205_child_pose in mur205_next_gen_population:
-    #         child_mutation_chance: float = random.random()
-    #
-    #         if child_mutation_chance < MUTATION_CHANCE:  # Mutation
-    #             mutate_geometry_contour_with_dead_zones(mur205_opti_info=mur205_child_pose,
-    #                                                     min_mutation_distance=MIN_STEP_SIZE,
-    #                                                     max_mutation_distance=MAX_STEP_SIZE,
-    #                                                     min_mutation_rotation=MIN_ROTATION,
-    #                                                     max_mutation_rotation=MAX_ROTATION,
-    #                                                     outside_border_list=ur5_base_link_boundary_list,
-    #                                                     object_to_move=object_to_move,
-    #                                                     deadzone_list=deadzone_list)
-    #
-    #     # Survivor selection
-    #     for member in mur205_optimization_population:
-    #         member.fitness = calc_fitness_mur205_positions(member,
-    #                                                        ur5_base_link_boundary_list,
-    #                                                        object_to_move.calc_centroid_world_cs())
-    #
-    #     for member in mur205_next_gen_population:
-    #         member.fitness = calc_fitness_mur205_positions(member,
-    #                                                        ur5_base_link_boundary_list,
-    #                                                        object_to_move.calc_centroid_world_cs())
-    #
-    #     mur205_optimization_population.extend(mur205_next_gen_population)
-    #
-    #     sorted_total_population: list = sorted(mur205_optimization_population,
-    #                                            key=lambda member: member.fitness,
-    #                                            reverse=True)
-    #
-    #     mur205_optimization_population = sorted_total_population[0:MAX_POPULATION]
-    #     # for population_counter in range(0, MAX_POPULATION):
-    #     #     next_population.append(sorted_total_population[population_counter][0])
-    #
-    # for mur205_opti_info in mur205_optimization_population:
-    #     # contour.plot_edges(color="orange")
-    #     mur205_opti_info.fitness = calc_fitness_mur205_positions(mur205_opti_info,
-    #                                                              ur5_base_link_boundary_list,
-    #                                                              object_to_move.calc_centroid_world_cs())
-    #
-    # sorted_total_population: list = sorted(mur205_optimization_population,
-    #                                        key=lambda member: member.fitness,
-    #                                        reverse=True)
-    #
-    # best_grip_contour: MuR205PoseOptimizationInfo = sorted_total_population[0]
-    # best_grip_contour.ur5_base_link_pose_contour.plot_edges(color="green")
-    #
-    # for mur205 in best_grip_contour.mur205_contour_list:
-    #     mur205.plot_edges(color="pink")
+    ur5_base_link_boundary_list: List[GeometryContour] = list()
+    for corner_point_world_cs in best_grip_contour.corner_point_list_world_cs:
+        ur5_grip_boundary = create_circle_contour(corner_point_world_cs, 0.75)
+        # ur5_grip_boundary.plot_edges(color="black")
+        ur5_base_link_boundary_list.append(ur5_grip_boundary)
+
+    # Initialization
+    mur205_optimization_population: List[MuR205PoseOptimizationInfo] = list()
+
+    for population_member_counter in range(0, MAX_POPULATION):
+        # Create one object to contain all information for the optimization
+        # Member first contains default/empty elements
+        mur205_pose_opti_info: MuR205PoseOptimizationInfo = MuR205PoseOptimizationInfo(GeometryContour(),
+                                                                                       list(),
+                                                                                       0.0)
+        for ur5_base_link_boundary in ur5_base_link_boundary_list:
+            # Initialize the first member of the optimization info
+            # Pick a random point in the ur5 base link boundary that is valid
+            ur5_base_link_pose: np.array = np.array([0, 0])
+            point_valid: bool = False
+            while not point_valid:
+                x_pose = random.uniform(ur5_base_link_boundary.x_min_world_cs,
+                                        ur5_base_link_boundary.x_max_world_cs)
+                y_pose = random.uniform(ur5_base_link_boundary.y_min_world_cs,
+                                        ur5_base_link_boundary.y_max_world_cs)
+                ur5_base_link_pose = np.array([x_pose, y_pose])
+                if ur5_base_link_boundary.is_world_cs_point_in_contour(ur5_base_link_pose) and not \
+                        extended_object_contour.is_world_cs_point_in_contour(ur5_base_link_pose):
+                    mur205_pose_opti_info.ur5_base_link_pose_contour.add_contour_corner_world_cs(ur5_base_link_pose)
+                    point_valid = True
+
+            # Initialize the second member of the optimization info
+            # Pick a random orientation of the mir200 base that is valid
+            mur205_contour: MuR205 = MuR205()
+            mur205_contour.move_mur205_by_ur5_base_link(ur5_base_link_pose)
+
+            orientation_valid: bool = False
+            while not orientation_valid:
+                rand_orientation: float = random.uniform(0, (2 * pi))
+                mur205_contour.rotate_absolute_around_ur5_base_cs(rand_orientation)
+
+                if not mur205_contour.is_contour_colliding(object_to_move):
+                    mur205_pose_opti_info.mur205_contour_list.append(mur205_contour)
+                    orientation_valid = True
+
+        mur205_optimization_population.append(mur205_pose_opti_info)
+
+    for counter in range(0, 40):
+        # Create mating pool
+        ur5_base_fitness_sum: float = calc_fitness_sum_mur205_population(
+            mur205_optimization_population,
+            ur5_base_link_boundary_list,
+            object_to_move.calc_centroid_world_cs())
+
+        mating_pool: List[MuR205PoseOptimizationInfo] = list()
+        for mur205_pose_opti_info in mur205_optimization_population:
+            contour_fitness: float = calc_fitness_mur205_positions(mur205_pose_opti_info,
+                                                                   ur5_base_link_boundary_list,
+                                                                   object_to_move.calc_centroid_world_cs())
+            mating_pool_chance: float = contour_fitness / ur5_base_fitness_sum
+            mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
+            for pool_instance_counter in range(0, mating_pool_instances):
+                mating_pool.append(mur205_pose_opti_info)
+
+        while len(mating_pool) < len(mur205_optimization_population):
+            mating_pool.append(mur205_optimization_population[
+                                   random.randrange(0, len(mur205_optimization_population))])
+
+        mur205_next_gen_population: List[MuR205PoseOptimizationInfo] = list()
+        while len(mating_pool) > 1:
+            first_parent_index: int = random.randrange(0, len(mating_pool))
+            first_parent: MuR205PoseOptimizationInfo = mating_pool.pop(first_parent_index)
+            second_parent_index: int = random.randrange(0, len(mating_pool))
+            second_parent: MuR205PoseOptimizationInfo = mating_pool.pop(second_parent_index)
+
+            # Point for splitting the corners and giving them to the children.
+            # At least split between 1 and 2 or n-1 and n so at least one point will be separatd
+            gene_crossover_point: int = random.randrange(1, (len(first_parent.mur205_contour_list) - 1))
+
+            first_child: MuR205PoseOptimizationInfo = MuR205PoseOptimizationInfo(
+                GeometryContour(
+                    lead_vector_world_cs=first_parent.ur5_base_link_pose_contour.lead_vector_world_cs,
+                    world_to_geometry_cs_rotation=first_parent.ur5_base_link_pose_contour.world_to_geometry_rotation),
+                list(),
+                0.0)
+            second_child: MuR205PoseOptimizationInfo = MuR205PoseOptimizationInfo(
+                GeometryContour(
+                    lead_vector_world_cs=first_parent.ur5_base_link_pose_contour.lead_vector_world_cs,
+                    world_to_geometry_cs_rotation=first_parent.ur5_base_link_pose_contour.world_to_geometry_rotation),
+                list(),
+                0.0)
+
+            corner_point_list_length: int = len(first_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs)
+
+            first_child.ur5_base_link_pose_contour.add_contour_corner_list_geometry_cs(
+                first_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs[0:gene_crossover_point])
+            first_child.mur205_contour_list.extend(first_parent.mur205_contour_list[0:gene_crossover_point])
+
+            second_child.ur5_base_link_pose_contour.add_contour_corner_list_geometry_cs(
+                second_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs[0:gene_crossover_point])
+            second_child.mur205_contour_list.extend(second_parent.mur205_contour_list[0:gene_crossover_point])
+
+            first_child.ur5_base_link_pose_contour.add_contour_corner_list_geometry_cs(
+                second_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs[gene_crossover_point:
+                                                                                       corner_point_list_length])
+            first_child.mur205_contour_list.extend(second_parent.mur205_contour_list[gene_crossover_point:
+                                                                                     corner_point_list_length])
+
+            second_child.ur5_base_link_pose_contour.add_contour_corner_list_geometry_cs(
+                first_parent.ur5_base_link_pose_contour.corner_point_list_geometry_cs[gene_crossover_point:
+                                                                                      corner_point_list_length])
+            second_child.mur205_contour_list.extend(first_parent.mur205_contour_list[gene_crossover_point:
+                                                                                     corner_point_list_length])
+
+            mur205_next_gen_population.append(first_child)
+            mur205_next_gen_population.append(second_child)
+
+        # Mutation
+        MUTATION_CHANCE: float = 0.6
+        MAX_STEP_SIZE: float = 0.005
+        MIN_STEP_SIZE: float = 0.001
+        MAX_ROTATION: float = pi/4
+        MIN_ROTATION: float = pi/32
+
+        deadzone_list: List[GeometryContour] = list()
+        deadzone_list.append(extended_object_contour)
+
+        for mur205_child_pose in mur205_next_gen_population:
+            child_mutation_chance: float = random.random()
+
+            if child_mutation_chance < MUTATION_CHANCE:  # Mutation
+                mutate_geometry_contour_with_dead_zones(mur205_opti_info=mur205_child_pose,
+                                                        min_mutation_distance=MIN_STEP_SIZE,
+                                                        max_mutation_distance=MAX_STEP_SIZE,
+                                                        min_mutation_rotation=MIN_ROTATION,
+                                                        max_mutation_rotation=MAX_ROTATION,
+                                                        outside_border_list=ur5_base_link_boundary_list,
+                                                        object_to_move=object_to_move,
+                                                        deadzone_list=deadzone_list)
+
+        # Survivor selection
+        for member in mur205_optimization_population:
+            member.fitness = calc_fitness_mur205_positions(member,
+                                                           ur5_base_link_boundary_list,
+                                                           object_to_move.calc_centroid_world_cs())
+
+        for member in mur205_next_gen_population:
+            member.fitness = calc_fitness_mur205_positions(member,
+                                                           ur5_base_link_boundary_list,
+                                                           object_to_move.calc_centroid_world_cs())
+
+        mur205_optimization_population.extend(mur205_next_gen_population)
+
+        sorted_total_population: list = sorted(mur205_optimization_population,
+                                               key=lambda member: member.fitness,
+                                               reverse=True)
+
+        mur205_optimization_population = sorted_total_population[0:MAX_POPULATION]
+        # for population_counter in range(0, MAX_POPULATION):
+        #     next_population.append(sorted_total_population[population_counter][0])
+        print("MiR200 optimization: " + str(counter))
+
+    for mur205_opti_info in mur205_optimization_population:
+        # contour.plot_edges(color="orange")
+        mur205_opti_info.fitness = calc_fitness_mur205_positions(mur205_opti_info,
+                                                                 ur5_base_link_boundary_list,
+                                                                 object_to_move.calc_centroid_world_cs())
+
+    sorted_total_population: list = sorted(mur205_optimization_population,
+                                           key=lambda member: member.fitness,
+                                           reverse=True)
+
+    best_grip_contour: MuR205PoseOptimizationInfo = sorted_total_population[0]
+    best_grip_contour.ur5_base_link_pose_contour.plot_edges(color="green")
+
+    for mur205 in best_grip_contour.mur205_contour_list:
+        mur205.plot_edges(color="pink")
 
     # mir_contour: MuR205 = MuR205()
     # mir_contour.move_mur205_by_ur5_base_link(best_grip_contour.corner_point_list_world_cs[0], -(pi / 2))
     # mir_contour.plot_edges(color="black")
-    #
+
     # mir_contour.rotate_relative_around_ur5_base_cs((3 * pi) / 4)
     # mir_contour.plot_edges(color="pink")
     # print(mir_contour.is_contour_colliding(object_to_move))
