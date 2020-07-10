@@ -3,6 +3,7 @@ from matplotlib import colors as mcolors
 import numpy as np
 from math import sin, cos, atan2
 from typing import List
+from typing import Union
 
 from geometry_info.edge_info import EdgeInfo
 
@@ -206,21 +207,23 @@ class GeometryContour:
             cur_edge = contour.edge_list_geometry_cs[counter]
             centroid_geometry_cs: np.array = contour.calc_centroid_geometry_cs()
 
-            ortho_bef_edge_geometry_cs: np.array = self.calc_ortho_vector_point_to_line(
+            ortho_bef_edge_geometry_cs: np.array = self.calc_ortho_vector_point_to_vector_line(
                 orthogonal_point=centroid_geometry_cs,
                 line=bef_edge.edge_vector,
                 lead_vector=bef_edge.start_point)
 
-            ext_ortho_bef_edge_geometry_cs: np.array = self.extend_vector_by_length(ortho_bef_edge_geometry_cs,
-                                                                                    offset_value)
+            ext_ortho_bef_edge_geometry_cs: np.array = GeometryContour.extend_vector_by_length(
+                ortho_bef_edge_geometry_cs,
+                offset_value)
 
-            ortho_cur_edge_geometry_cs: np.array = self.calc_ortho_vector_point_to_line(
+            ortho_cur_edge_geometry_cs: np.array = self.calc_ortho_vector_point_to_vector_line(
                 orthogonal_point=centroid_geometry_cs,
                 line=cur_edge.edge_vector,
                 lead_vector=cur_edge.start_point)
 
-            ext_ortho_cur_edge_geometry_cs: np.array = self.extend_vector_by_length(ortho_cur_edge_geometry_cs,
-                                                                                    offset_value)
+            ext_ortho_cur_edge_geometry_cs: np.array = GeometryContour.extend_vector_by_length(
+                ortho_cur_edge_geometry_cs,
+                offset_value)
 
             new_corner_point_geometry_cs: np.array = self.calc_vector_line_intersection_point(
                 lead_vector_1=ext_ortho_cur_edge_geometry_cs,
@@ -373,13 +376,13 @@ class GeometryContour:
     def get_closest_edge_to_point(self, point_geometry_cs: np.array) -> EdgeInfo:
         # TODO Docstring
         closest_edge_geometry_cs: EdgeInfo = self._edge_list_geometry_cs[0]
-        shortest_distance: float = self.calc_distance_point_to_line(point_geometry_cs,
-                                                                    closest_edge_geometry_cs.edge_vector,
-                                                                    closest_edge_geometry_cs.start_point)
+        shortest_distance: float = self.calc_distance_point_to_vector_line(point_geometry_cs,
+                                                                           closest_edge_geometry_cs.edge_vector,
+                                                                           closest_edge_geometry_cs.start_point)
         for edge_geometry_cs in self._edge_list_geometry_cs:
-            new_distance: float = self.calc_distance_point_to_line(point_geometry_cs,
-                                                                   edge_geometry_cs.edge_vector,
-                                                                   edge_geometry_cs.start_point)
+            new_distance: float = self.calc_distance_point_to_vector_line(point_geometry_cs,
+                                                                          edge_geometry_cs.edge_vector,
+                                                                          edge_geometry_cs.start_point)
             if new_distance < shortest_distance:
                 closest_edge_geometry_cs = edge_geometry_cs
                 shortest_distance = new_distance
@@ -420,7 +423,8 @@ class GeometryContour:
 
         return shortest_edge_geometry_cs
 
-    def extend_vector_by_length(self, vector_to_extend: np.array, length_to_extend: float) -> np.array:
+    @staticmethod
+    def extend_vector_by_length(vector_to_extend: np.array, length_to_extend: float) -> np.array:
         """This method extends a vector by a given amount not a percentage!
 
         :param vector_to_extend: Vector that should be extended (2x1 np.array)
@@ -629,10 +633,10 @@ class GeometryContour:
         centroid_geometry_cs: np.array = self.calc_centroid_geometry_cs()
         return self.transform_vector_geometry_to_world_cs(centroid_geometry_cs)
 
-    def calc_ortho_vector_point_to_line(self,
-                                        orthogonal_point: np.array,
-                                        line: np.array,
-                                        lead_vector: np.array) -> np.array:
+    def calc_ortho_vector_point_to_vector_line(self,
+                                               orthogonal_point: np.array,
+                                               line: np.array,
+                                               lead_vector: np.array) -> np.array:
         """General method for calculating the orthogonal vector from a line to a point.
         Notice that the line will be expanded to +/- infinity.
 
@@ -663,10 +667,47 @@ class GeometryContour:
         vector_point_to_line: np.array = point_on_line - orthogonal_point
         return vector_point_to_line
 
-    def calc_distance_point_to_line(self,
-                                    point_geometry_cs: np.array,
-                                    line: np.array,
-                                    start_point_line_geometry_cs: np.array) -> float:
+    def calc_ortho_vector_point_to_vector(self,
+                                          orthogonal_point: np.array,
+                                          line: np.array,
+                                          lead_vector: np.array) -> np.array:
+        """General method for calculating the orthogonal vector from a line to a point.
+        Notice that the line will NOT be expanded to +/- infinity.
+
+        :param orthogonal_point: Point from where the orthogonal vector will go to the line
+        :type orthogonal_point: np.array
+        :param line: Vector from where the orthogonal vector is drawn and from where the orthognal vector
+        must be attached
+        :type line: np.array
+        :param lead_vector: lead vector of the line
+        :type lead_vector: np.array
+        :return: 2x1 vector which resembles the vector from "orthogonal_point" to the line
+        :rtype: np.array
+        """
+        nominator: float = (orthogonal_point[0] * line[0] +
+                            orthogonal_point[1] * line[1] -
+                            line[0] * lead_vector[0] -
+                            line[1] * lead_vector[1])
+        denominator: float = pow(line[0], 2) + pow(line[1], 2)
+
+        factor: float
+        try:
+            factor = nominator / denominator
+        except ZeroDivisionError:
+            print("Divided by zero in the 'calculate_orthogonal_vector_point_to_line' method!")
+            return None
+
+        if factor > 1 or factor < -1:
+            return None
+        else:
+            point_on_line: np.array = lead_vector + factor * line
+            vector_point_to_line: np.array = point_on_line - orthogonal_point
+            return vector_point_to_line
+
+    def calc_distance_point_to_vector_line(self,
+                                           point_geometry_cs: np.array,
+                                           line: np.array,
+                                           start_point_line_geometry_cs: np.array) -> float:
         """Method which calculates the shortest distance from a point to line.
         Line is not limited to the length of the vector from the start_point.
         Shortest distance uses the orthogonal vector from point to line.
@@ -680,11 +721,87 @@ class GeometryContour:
         :return: Distance point to line
         :rtype: float
         """
-        vector_point_to_line: np.array = self.calc_ortho_vector_point_to_line(
+        vector_point_to_line: np.array = self.calc_ortho_vector_point_to_vector_line(
             orthogonal_point=point_geometry_cs,
             line=line,
             lead_vector=start_point_line_geometry_cs)
         return np.linalg.norm(vector_point_to_line)
+
+    def calc_distance_point_to_vector(self,
+                                      point_geometry_cs: np.array,
+                                      line: np.array,
+                                      start_point_line_geometry_cs: np.array) -> Union[float, None]:
+        """Method which calculates the shortest distance from a point to line.
+        Line is limited to the length of the vector from the start_point.
+        Shortest distance uses the orthogonal vector from point to line.
+
+        :param point_geometry_cs: Point from where the distance to line should be calculated
+        :type point_geometry_cs: np.array
+        :param line: Line from where the distance should be calculated
+        :type line: np.array
+        :param start_point_line_geometry_cs: Start point of the line (lead vector)
+        :type start_point_line_geometry_cs: np.array
+        :return: Distance point to line
+        :rtype: float
+        """
+        vector_point_to_line: np.array = self.calc_ortho_vector_point_to_vector(
+            orthogonal_point=point_geometry_cs,
+            line=line,
+            lead_vector=start_point_line_geometry_cs)
+        if vector_point_to_line is None:
+            return None
+        else:
+            return np.linalg.norm(vector_point_to_line)
+
+    def calc_closest_distance_edge_to_point(self, point_world_cs: np.array) -> Union[float, None]:
+        """
+        # TODO
+        :param point_world_cs:
+        :type point_world_cs: np.array
+        :return:
+        :rtype: Union[EdgeInfo, None]
+        """
+
+        point_geometry_cs: np.array = self.transform_vector_world_to_geometry_cs(point_world_cs)
+
+        # Init values
+        shortest_distance: Union[float, None] = self.calc_distance_point_to_vector(
+            point_geometry_cs=point_geometry_cs,
+            line=self.edge_list_geometry_cs[0].edge_vector,
+            start_point_line_geometry_cs=self.edge_list_geometry_cs[0].start_point)
+
+        for line in self.edge_list_geometry_cs:
+            distance: Union[float, None] = self.calc_distance_point_to_vector(
+                point_geometry_cs=point_geometry_cs,
+                line=line.edge_vector,
+                start_point_line_geometry_cs=line.start_point)
+            if shortest_distance is None:
+                shortest_distance = distance
+            else:
+                if distance is not None and distance < shortest_distance:
+                    shortest_distance = distance
+
+        return shortest_distance
+
+    def calc_closest_distance_corner_to_point(self, point_world_cs: np.array) -> float:
+        """
+        # TODO
+        :param point_world_cs:
+        :type point_world_cs:
+        :return:
+        :rtype:
+        """
+        point_geometry_cs: np.array = self.transform_vector_world_to_geometry_cs(point_world_cs)
+
+        shortest_distance: float = np.linalg.norm(point_geometry_cs - self.corner_point_list_geometry_cs[0])
+        for corner_geometry_cs in self.corner_point_list_geometry_cs:
+            diff_vector: np.array = point_geometry_cs - corner_geometry_cs
+            distance: float = np.linalg.norm(diff_vector)
+            if distance < shortest_distance:
+                shortest_distance = distance
+
+        return shortest_distance
+
 
     def calc_contour_length(self) -> float:
         """Sums up all lengths of the edges.
@@ -805,7 +922,7 @@ class GeometryContour:
     def calc_distance_closest_edge_to_point(self, point: np.array) -> float:
         # TODO Docstring
         closest_edge: EdgeInfo = self.get_closest_edge_to_point(point)
-        return self.calc_distance_point_to_line(point, closest_edge.edge_vector, closest_edge.start_point)
+        return self.calc_distance_point_to_vector_line(point, closest_edge.edge_vector, closest_edge.start_point)
 
     def calc_longest_edge_length(self) -> float:
         # TODO Docstring
@@ -906,10 +1023,9 @@ class GeometryContour:
         centroid_geometry_cs: np.array = self.calc_centroid_geometry_cs()
         centroid_world_cs: np.array = self.transform_vector_geometry_to_world_cs(centroid_geometry_cs)
         for edge in self._edge_list_geometry_cs:
-            orthogonal_vector: np.array = self.calc_ortho_vector_point_to_line(centroid_geometry_cs,
-                                                                               edge.edge_vector,
-                                                                               edge.start_point)
-            # orthogonal_vector = self.extend_vector_by_length(orthogonal_vector, 0.3)
+            orthogonal_vector: np.array = self.calc_ortho_vector_point_to_vector_line(centroid_geometry_cs,
+                                                                                      edge.edge_vector,
+                                                                                      edge.start_point)
             plot.plot([centroid_world_cs[0], centroid_world_cs[0] + orthogonal_vector[0]],
                       [centroid_world_cs[1], centroid_world_cs[1] + orthogonal_vector[1]],
                       color=color,
