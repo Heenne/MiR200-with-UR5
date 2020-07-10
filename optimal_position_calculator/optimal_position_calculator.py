@@ -4,8 +4,10 @@ from matplotlib import pyplot as plot
 from matplotlib import colors as mcolors
 import random
 import numpy as np
-from math import sin, cos, pi
+import math
+from math import sin, cos, atan2, pi
 from typing import List
+from typing import Union
 from copy import deepcopy
 
 from geometry_info.geometry_contour import GeometryContour
@@ -19,6 +21,9 @@ from urdf_reader import GeometryType
 from launch_reader import LaunchReader
 
 NUMBER_OF_ROBOTS: int = 3
+
+d_greif_min: float = 0.1
+d_mir_min: float = 0.3
 
 
 def plot_contour_info(object_to_move, extended_object_contour, grip_area):
@@ -101,12 +106,12 @@ def calculate_fitness_of_grip_contour(grip_contour: GeometryContour,
                 a[line_counter, column_counter] = 0
             else:
                 a[line_counter, column_counter] = \
-                    grip_contour.calc_distance_point_to_line(grip_corner_world_cs,
-                                                             grip_edge_world_cs.edge_vector,
-                                                             grip_edge_world_cs.start_point)
-        l[line_counter] = grip_contour.calc_distance_point_to_line(centroid_object_to_move_world_cs,
-                                                                   grip_edge_world_cs.edge_vector,
-                                                                   grip_edge_world_cs.start_point)
+                    grip_contour.calc_distance_point_to_vector_line(grip_corner_world_cs,
+                                                                    grip_edge_world_cs.edge_vector,
+                                                                    grip_edge_world_cs.start_point)
+        l[line_counter] = grip_contour.calc_distance_point_to_vector_line(centroid_object_to_move_world_cs,
+                                                                          grip_edge_world_cs.edge_vector,
+                                                                          grip_edge_world_cs.start_point)
     # print("A:")
     # print(A)
     # print("l:")
@@ -130,13 +135,13 @@ def calculate_fitness_of_grip_contour(grip_contour: GeometryContour,
 
     shortest_distances: np.array = np.zeros(NUMBER_OF_ROBOTS)
     for index, grip_point_world_cs in enumerate(grip_contour.corner_point_list_world_cs):
-        shortest_distance: float = grip_area.calc_distance_point_to_line(grip_point_world_cs,
-                                                                         grip_area.edge_list_world_cs[0].edge_vector,
-                                                                         grip_area.edge_list_world_cs[0].start_point)
+        shortest_distance: float = grip_area.calc_distance_point_to_vector_line(grip_point_world_cs,
+                                                                                grip_area.edge_list_world_cs[0].edge_vector,
+                                                                                grip_area.edge_list_world_cs[0].start_point)
         for edge_world_cs in grip_area.edge_list_world_cs:
-            distance: float = grip_area.calc_distance_point_to_line(grip_point_world_cs,
-                                                                    edge_world_cs.edge_vector,
-                                                                    edge_world_cs.start_point)
+            distance: float = grip_area.calc_distance_point_to_vector_line(grip_point_world_cs,
+                                                                           edge_world_cs.edge_vector,
+                                                                           edge_world_cs.start_point)
             if distance < shortest_distance:
                 shortest_distance = distance
 
@@ -145,13 +150,13 @@ def calculate_fitness_of_grip_contour(grip_contour: GeometryContour,
     # print("Shortest distances:")
     # print(shortest_distances)
 
-    abs_farthest_distance: float = grip_area.calc_distance_point_to_line(centroid_object_to_move_world_cs,
-                                                                         grip_area.edge_list_world_cs[0].edge_vector,
-                                                                         grip_area.edge_list_world_cs[0].start_point)
+    abs_farthest_distance: float = grip_area.calc_distance_point_to_vector_line(centroid_object_to_move_world_cs,
+                                                                                grip_area.edge_list_world_cs[0].edge_vector,
+                                                                                grip_area.edge_list_world_cs[0].start_point)
     for edge_world_cs in grip_area.edge_list_world_cs:
-        distance: float = grip_area.calc_distance_point_to_line(centroid_object_to_move_world_cs,
-                                                                edge_world_cs.edge_vector,
-                                                                edge_world_cs.start_point)
+        distance: float = grip_area.calc_distance_point_to_vector_line(centroid_object_to_move_world_cs,
+                                                                       edge_world_cs.edge_vector,
+                                                                       edge_world_cs.start_point)
         if distance > abs_farthest_distance:
             abs_farthest_distance = distance
 
@@ -180,55 +185,158 @@ def calculate_fitness_sum_of_grip_population(grip_contour_population: list, cent
 
 def calc_fitness_mur205_positions(mur205_pose_opti_info: MuR205PoseOptimizationInfo,
                                   ur5_base_link_boundary_list: List[GeometryContour],
-                                  object_to_move_centroid_world_cs: np.array) -> float:
+                                  grip_contour: GeometryContour,
+                                  object_to_move: MovableObject) -> float:
     """
     TODO
     :param mur205_pose_opti_info:
     :type mur205_pose_opti_info:
     :param ur5_base_link_boundary_list:
-    :type ur5_base_link_boundary_list:
-    :param object_to_move_centroid_world_cs:
-    :type object_to_move_centroid_world_cs:
+    :type ur5_base_link_boundary_list: List[GeometryContour]
+    :param grip_contour:
+    :type grip_contour: GeometryContour
+    :param object_to_move:
+    :type object_to_move: MovableObject
     :return: Smallest value will be best!
     :rtype:
     """
+    # Old fitness calculation
     # Calculate the reference value for the ur5 base link contour length fitness
     # This is used to unify the contour value to get a value between 0-1 for adding it to other
     # fitness values
-    largest_ur5_base_link_contour: GeometryContour = GeometryContour(object_to_move_centroid_world_cs)
-    for ur5_base_link_boundary in ur5_base_link_boundary_list:
-        farthest_corner: np.array = ur5_base_link_boundary.calc_farthest_corner_to_point(
-            object_to_move_centroid_world_cs)
-        largest_ur5_base_link_contour.add_contour_corner_world_cs(farthest_corner)
-
-    largest_ur5_base_link_contour_value: float = largest_ur5_base_link_contour.calc_contour_length()
-    ur5_base_link_contour_length: float = mur205_pose_opti_info.ur5_base_link_pose_contour.calc_contour_length()
-    # Smallest value (0) will be best
-    contour_length_fitness: float = ur5_base_link_contour_length / largest_ur5_base_link_contour_value
-
-    # Calculate the reference for the mir205 contour length fitness
-    # largest_mur205_contour: GeometryContour = GeometryContour(object_to_move_centroid_world_cs)
-    # for mur205_contour in mur205_pose_opti_info.mur205_contour_list:
-    #     farthest_corner: np.array = mur205_contour.calc_farthest_corner_to_point(object_to_move_centroid_world_cs)
-    #     largest_mur205_contour.add_contour_corner_world_cs(farthest_corner)
+    # largest_ur5_base_link_contour: GeometryContour = GeometryContour(object_to_move_centroid_world_cs)
+    # for ur5_base_link_boundary in ur5_base_link_boundary_list:
+    #     farthest_corner: np.array = ur5_base_link_boundary.calc_farthest_corner_to_point(
+    #         object_to_move_centroid_world_cs)
+    #     largest_ur5_base_link_contour.add_contour_corner_world_cs(farthest_corner)
     #
-    # largest_mur205_contour_value: float = largest_mur205_contour.calc_contour_length()
-    # mur205_contour_length: float =
+    # largest_ur5_base_link_contour_value: float = largest_ur5_base_link_contour.calc_contour_length()
+    # ur5_base_link_contour_length: float = mur205_pose_opti_info.ur5_base_link_pose_contour.calc_contour_length()
+    # # Smallest value (0) will be best
+    # contour_length_fitness: float = ur5_base_link_contour_length / largest_ur5_base_link_contour_value
 
-    contour_length_weighting: float = 1.0  # weighting of the contour length
-    fitness: float = contour_length_weighting * contour_length_fitness
+    # contour_length_weighting: float = 1.0  # weighting of the contour length
+    # fitness: float = contour_length_weighting * contour_length_fitness
 
-    return fitness
+    # return fitness
+    # Old fitness calculation end
+
+    # New fitness calculation
+
+    # Get current footprint area the MuR205 are creating
+    mur205_footprint_contour: GeometryContour = GeometryContour(
+        lead_vector_world_cs=object_to_move.lead_vector_world_cs,
+        world_to_geometry_cs_rotation=object_to_move.world_to_geometry_rotation)
+    for mur205 in mur205_pose_opti_info.mur205_contour_list:
+        farthest_corner_mur205_contour_world_cs: np.array = mur205.calc_farthest_corner_to_point(
+            object_to_move.calc_centroid_world_cs())
+        mur205_footprint_contour.add_contour_corner_world_cs(farthest_corner_mur205_contour_world_cs)
+
+    current_footprint_area: float = mur205_footprint_contour.calc_area()
+
+    # Get max. footprint area
+    max_mur205_footprint_contour: GeometryContour = GeometryContour(
+        lead_vector_world_cs=object_to_move.lead_vector_world_cs,
+        world_to_geometry_cs_rotation=object_to_move.world_to_geometry_rotation)
+    for grip_point_world_cs in grip_contour.corner_point_list_world_cs:
+        # centroid should be at 0,0 but calculate and use it to be save
+        temp_grip_point_geometry_cs: np.array = object_to_move.transform_vector_world_to_geometry_cs(grip_point_world_cs)
+        grip_point_geometry_cs: np.array = temp_grip_point_geometry_cs - object_to_move.calc_centroid_geometry_cs()
+        # Extend the vector from centroid of the movable object to the grip point by 0.75m which is the distance
+        # the robot arm can reach.
+        extended_grip_point_geometry_cs: np.array = GeometryContour.extend_vector_by_length(grip_point_geometry_cs,
+                                                                                            0.75)
+        extended_grip_point_world_cs: np.array = object_to_move.transform_vector_geometry_to_world_cs(
+            extended_grip_point_geometry_cs)
+
+        # Calculate rotation by inverting grip_point vector and getting angle
+        inv_ext_grip_point_world_cs: np.array = -1 * extended_grip_point_world_cs
+        rotation: float = atan2(inv_ext_grip_point_world_cs[1], inv_ext_grip_point_world_cs[0])
+        temp_mur205: MuR205 = MuR205()
+        temp_mur205.move_mur205_by_ur5_base_link(extended_grip_point_world_cs, rotation)
+
+        farthest_corner_temp_mur205_world_cs: np.array = temp_mur205.calc_farthest_corner_to_point(
+            object_to_move.calc_centroid_world_cs())
+        max_mur205_footprint_contour.add_contour_corner_world_cs(farthest_corner_temp_mur205_world_cs)
+
+    max_footprint_area: float = max_mur205_footprint_contour.calc_area()
+
+    # Print debug info, remove later
+    mur205_footprint_contour.plot_edges()
+    max_mur205_footprint_contour.plot_edges()
+
+    # Calculate fitness value of the footprint area
+    g_footprint: float = current_footprint_area / max_footprint_area
+
+    # Calculation of distance to widened object contour
+    # For the moment just use corners of mur205 to object, but should be sufficient
+
+    extended_object_contour: GeometryContour = GeometryContour()
+    extended_object_contour.import_contour_with_offset(object_to_move, d_mir_min)
+
+    max_distance_of_mur205_population: float = 0
+    for mur205 in mur205_pose_opti_info.mur205_contour_list:
+        shortest_distance_for_mur205: float = 10000000000000  # Init value
+        for corner_world_cs in mur205.corner_point_list_world_cs:
+            distance_to_edge: Union[float, None] = extended_object_contour.calc_closest_distance_edge_to_point(
+                corner_world_cs)
+
+            if distance_to_edge is not None and distance_to_edge < shortest_distance_for_mur205:
+                shortest_distance_for_mur205 = distance_to_edge
+
+            distance_to_corner: float = extended_object_contour.calc_closest_distance_corner_to_point(
+                corner_world_cs)
+
+            if distance_to_corner < shortest_distance_for_mur205:
+                shortest_distance_for_mur205 = distance_to_corner
+
+        if shortest_distance_for_mur205 > max_distance_of_mur205_population:
+            max_distance_of_mur205_population = shortest_distance_for_mur205
+
+    # Calculation of max distance to widened object contour
+    # 0.15 is the shortest distance from the  UR5 coordinate system to side of mir200 plattform
+    # 0.75 is reachable distance for robot arm
+    d_mir_max = 0.75 - d_greif_min - d_mir_min - 0.15
+
+    # Calculate fitness value of the distance to the widened object contour
+    g_distance = max_distance_of_mur205_population / d_mir_max
+
+    # Calculation of minimal rotation of MiR200 coordinate system to specified rotation
+    target_rotation: float = math.radians(90)
+
+    # Init value with target value so it can only be worse. (max is searched)
+    largest_rotation_diff: float = target_rotation
+    for mur205 in mur205_pose_opti_info.mur205_contour_list:
+        mur205_rotation: float = mur205.world_to_geometry_rotation
+        rotation_diff: float = abs(abs(target_rotation)-abs(mur205_rotation))
+
+        if rotation_diff > largest_rotation_diff:
+            largest_rotation_diff = rotation_diff
+
+    # Define max diff in radian
+    max_rotation_diff: float = math.radians(90)
+
+    # Calculate fitness value of the rotation diff
+    g_rotation = largest_rotation_diff / max_rotation_diff
+
+    g_mur205: float = 1.0 * g_footprint + 1.0 * g_distance + 1.0 * g_rotation
+    return g_mur205
+    # New fitness calculation end
+
+
+
 
 
 def calc_fitness_sum_mur205_population(mur205_pose_optimization_population: List[MuR205PoseOptimizationInfo],
                                        ur5_base_link_boundary_list: List[GeometryContour],
-                                       object_to_move_centroid_world_cs: np.array) -> float:
+                                       grip_contour: GeometryContour,
+                                       object_to_move: MovableObject) -> float:
     fitness_sum: float = 0.0
     for mur205_pose_opti_info in mur205_pose_optimization_population:
         fitness: float = calc_fitness_mur205_positions(mur205_pose_opti_info,
                                                        ur5_base_link_boundary_list,
-                                                       object_to_move_centroid_world_cs)
+                                                       grip_contour,
+                                                       object_to_move)
         fitness_sum += fitness
 
     return fitness_sum
@@ -257,6 +365,7 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
     index_of_mutated_corner: int = random.randrange(0, len(contour_to_mutate.corner_point_list_geometry_cs))
 
     corner_was_replaced: bool = False
+    timeout_counter: int = 0
 
     while not corner_was_replaced:
         corner_to_mutate_geometry_cs: np.array = \
@@ -285,6 +394,11 @@ def mutate_geometry_contour(contour_to_mutate: GeometryContour,
                 contour_to_mutate.replace_contour_corner_geometry_cs(index_of_mutated_corner,
                                                                      corner_to_mutate_geometry_cs)
                 corner_was_replaced = True
+
+        timeout_counter += 1  # Increase timeout counter
+        # If mutation failes for 100 times break loop and send some random pose back
+        if timeout_counter >= 100:
+            break
 
     # plot.plot(contour_to_mutate.corner_point_list[index_of_mutated_corner][0],
     #           contour_to_mutate.corner_point_list[index_of_mutated_corner][1],
@@ -438,11 +552,11 @@ if __name__ == '__main__':
 
     # Contour where robot base has to be outside
     extended_object_contour: GeometryContour = GeometryContour()
-    extended_object_contour.import_contour_with_offset(object_to_move, 0.3)
+    extended_object_contour.import_contour_with_offset(object_to_move, d_mir_min)
 
     # Contour where the gripper tip must be inside
     grip_area: GeometryContour = GeometryContour()
-    grip_area.import_contour_with_offset(object_to_move, -0.1)
+    grip_area.import_contour_with_offset(object_to_move, -d_greif_min)
 
     centroid_object_to_move_world_cs: np.array = object_to_move.calc_centroid_world_cs()
     object_to_move.plot_centroid(color="red")
@@ -530,11 +644,13 @@ if __name__ == '__main__':
             child_mutation_chance: float = random.random()
 
             if child_mutation_chance < MUTATION_CHANCE:  # Mutation
+                print("Before mutation")
                 mutate_geometry_contour(mur205_child_pose,
                                         MIN_STEP_SIZE,
                                         MAX_STEP_SIZE,
                                         grip_area,
                                         centroid_object_to_move_world_cs)
+                print("After mutation")
 
         # Survivor selection
         total_population: dict = dict()
@@ -620,13 +736,15 @@ if __name__ == '__main__':
         ur5_base_fitness_sum: float = calc_fitness_sum_mur205_population(
             mur205_optimization_population,
             ur5_base_link_boundary_list,
-            object_to_move.calc_centroid_world_cs())
+            best_grip_contour,
+            object_to_move)
 
         mating_pool: List[MuR205PoseOptimizationInfo] = list()
         for mur205_pose_opti_info in mur205_optimization_population:
             contour_fitness: float = calc_fitness_mur205_positions(mur205_pose_opti_info,
                                                                    ur5_base_link_boundary_list,
-                                                                   object_to_move.calc_centroid_world_cs())
+                                                                   best_grip_contour,
+                                                                   object_to_move)
             mating_pool_chance: float = contour_fitness / ur5_base_fitness_sum
             mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
             for pool_instance_counter in range(0, mating_pool_instances):
@@ -712,12 +830,14 @@ if __name__ == '__main__':
         for member in mur205_optimization_population:
             member.fitness = calc_fitness_mur205_positions(member,
                                                            ur5_base_link_boundary_list,
-                                                           object_to_move.calc_centroid_world_cs())
+                                                           best_grip_contour,
+                                                           object_to_move)
 
         for member in mur205_next_gen_population:
             member.fitness = calc_fitness_mur205_positions(member,
                                                            ur5_base_link_boundary_list,
-                                                           object_to_move.calc_centroid_world_cs())
+                                                           best_grip_contour,
+                                                           object_to_move)
 
         mur205_optimization_population.extend(mur205_next_gen_population)
 
@@ -734,7 +854,8 @@ if __name__ == '__main__':
         # contour.plot_edges(color="orange")
         mur205_opti_info.fitness = calc_fitness_mur205_positions(mur205_opti_info,
                                                                  ur5_base_link_boundary_list,
-                                                                 object_to_move.calc_centroid_world_cs())
+                                                                 best_grip_contour,
+                                                                 object_to_move)
 
     sorted_total_population: list = sorted(mur205_optimization_population,
                                            key=lambda member: member.fitness,
