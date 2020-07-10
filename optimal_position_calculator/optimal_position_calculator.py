@@ -36,10 +36,12 @@ def plot_contour_info(object_to_move, extended_object_contour, grip_area):
     grip_area.plot_edges(block=False, color="black", linestyle="dashed")
 
 
-def init_grip_point_contour(lead_vector_world_cs: np.array,
+def init_grip_point_contour(object_to_move: MovableObject,
                             max_distance_from_centroid: float,
                             number_of_robots: int) -> GeometryContour:
-    grip_point_contour: GeometryContour = GeometryContour()
+    grip_point_contour: GeometryContour = GeometryContour(
+        lead_vector_world_cs=object_to_move.lead_vector_world_cs,
+        world_to_geometry_cs_rotation=object_to_move.world_to_geometry_rotation)
 
     # Random offset from 0 degree (right side) in mathematical positive direction. Range from 1°-180°
     offset_rotation: float = random.uniform((pi / 180), pi)
@@ -47,24 +49,22 @@ def init_grip_point_contour(lead_vector_world_cs: np.array,
 
     for counter in range(0, number_of_robots):
         distance_from_centroid: float = random.uniform(0.01, max_distance_from_centroid)
-        grip_point_world_cs: np.array = np.array(
-            [lead_vector_world_cs[0] + distance_from_centroid *
-             cos((angle_diff_between_robot * counter) + offset_rotation),
-             lead_vector_world_cs[1] + distance_from_centroid *
-             sin((angle_diff_between_robot * counter) + offset_rotation)])
+        grip_point_geometry_cs: np.array = np.array(
+            [distance_from_centroid * cos((angle_diff_between_robot * counter) + offset_rotation),
+             distance_from_centroid * sin((angle_diff_between_robot * counter) + offset_rotation)])
 
-        grip_point_contour.add_contour_corner_world_cs(grip_point_world_cs)
+        grip_point_contour.add_contour_corner_geometry_cs(grip_point_geometry_cs)
 
     return grip_point_contour
 
 
 def init_grip_contour_population(max_population: int,
-                                 lead_vector: np.array,
+                                 object_to_move: MovableObject,
                                  max_distance_from_centroid: float,
                                  number_of_robots: int) -> list:
     grip_contour_population: list = list()
     for counter in range(0, max_population):
-        new_grip_contour: GeometryContour = init_grip_point_contour(lead_vector,
+        new_grip_contour: GeometryContour = init_grip_point_contour(object_to_move,
                                                                     max_distance_from_centroid,
                                                                     number_of_robots)
         grip_contour_population.append(new_grip_contour)
@@ -455,7 +455,7 @@ if __name__ == '__main__':
     print("max step size: " + str(MAX_STEP_SIZE) + " | min step size: " + str(MIN_STEP_SIZE))
 
     grip_contour_population: list = init_grip_contour_population(MAX_POPULATION,
-                                                                 centroid_object_to_move_world_cs,
+                                                                 object_to_move,
                                                                  grip_area.calc_distance_closest_edge_to_point(
                                                                      centroid_object_to_move_world_cs),
                                                                  NUMBER_OF_ROBOTS)
