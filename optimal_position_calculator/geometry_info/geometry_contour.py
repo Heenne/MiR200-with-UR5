@@ -542,7 +542,7 @@ class GeometryContour:
         # If no corner of the current contour is in the other contour.
         # Check if an edge of one contour is colliding with an edge of the other contour
         for current_edge_world_cs in self.edge_list_world_cs:
-            for edge_to_check_world_cs in self.edge_list_world_cs:
+            for edge_to_check_world_cs in contour_to_check.edge_list_world_cs:
                 if self.calc_vector_intersection_point(current_edge_world_cs.start_point,
                                                        current_edge_world_cs.edge_vector,
                                                        edge_to_check_world_cs.start_point,
@@ -576,7 +576,7 @@ class GeometryContour:
                                      self._corner_point_list_geometry_cs[counter][1]))
                 area = area + part_area
 
-        area = 0.5 * area
+        area = abs(0.5 * area)
         return area
 
     def calc_centroid_geometry_cs(self) -> np.array:
