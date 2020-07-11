@@ -680,6 +680,13 @@ if __name__ == '__main__':
     best_grip_contour.plot_edges(color="grey")
     best_grip_contour.plot_corners(color="green", markersize=10)
 
+    # Plotting start
+    plot_contour_info(object_to_move, extended_object_contour, grip_area)
+    axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
+    axis.axis("equal")
+    object_to_move.plot_centroid(color="red", block=True)
+    # Plotting end
+
     ur5_base_link_boundary_list: List[GeometryContour] = list()
     for corner_point_world_cs in best_grip_contour.corner_point_list_world_cs:
         ur5_grip_boundary = create_circle_contour(corner_point_world_cs, 0.75)
@@ -868,11 +875,18 @@ if __name__ == '__main__':
     sorted_total_population: list = sorted(mur205_optimization_population,
                                            key=lambda member: member.fitness)
 
-    best_grip_contour: MuR205PoseOptimizationInfo = sorted_total_population[0]
-    best_grip_contour.ur5_base_link_pose_contour.plot_edges(color="green")
+    best_mur205_individual: MuR205PoseOptimizationInfo = sorted_total_population[0]
 
-    for mur205 in best_grip_contour.mur205_contour_list:
-        mur205.plot_edges(color="pink")
+    best_grip_contour.plot_edges(color="grey")
+    best_grip_contour.plot_corners(color="green", markersize=10)
+
+    for mur205 in best_mur205_individual.mur205_contour_list:
+        mur205.plot_edges(block=False, color="blue")
+
+    for index, ur5_base_link_pose_world_cs in enumerate(best_mur205_individual.ur5_base_link_pose_contour.corner_point_list_world_cs):
+        plot.plot([ur5_base_link_pose_world_cs[0], best_grip_contour.corner_point_list_world_cs[index][0]],
+                  [ur5_base_link_pose_world_cs[1], best_grip_contour.corner_point_list_world_cs[index][1]],
+                  color=mcolors.CSS4_COLORS["black"])
 
     # mir_contour: MuR205 = MuR205()
     # mir_contour.move_mur205_by_ur5_base_link(best_grip_contour.corner_point_list_world_cs[0], -(pi / 2))
