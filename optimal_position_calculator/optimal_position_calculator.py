@@ -23,7 +23,7 @@ from launch_reader import LaunchReader
 NUMBER_OF_ROBOTS: int = 3
 
 d_greif_min: float = 0.1
-d_mir_min: float = 0.3
+d_mir_min: float = 0.1
 
 
 def plot_contour_info(object_to_move, extended_object_contour, grip_area):
@@ -34,7 +34,7 @@ def plot_contour_info(object_to_move, extended_object_contour, grip_area):
 
     # extended_object_contour.print_info()
     # extended_object_contour.plot_corners(block=False)
-    # extended_object_contour.plot_edges(block=False)
+    extended_object_contour.plot_edges(block=False, color="black", linestyle="dashed")
 
     # grip_area.print_info()
     # grip_area.plot_corners(block=False)
@@ -184,7 +184,6 @@ def calculate_fitness_sum_of_grip_population(grip_contour_population: list, cent
 
 
 def calc_fitness_mur205_positions(mur205_pose_opti_info: MuR205PoseOptimizationInfo,
-                                  ur5_base_link_boundary_list: List[GeometryContour],
                                   grip_contour: GeometryContour,
                                   object_to_move: MovableObject) -> float:
     """
@@ -262,8 +261,8 @@ def calc_fitness_mur205_positions(mur205_pose_opti_info: MuR205PoseOptimizationI
     max_footprint_area: float = max_mur205_footprint_contour.calc_area()
 
     # Print debug info, remove later
-    mur205_footprint_contour.plot_edges()
-    max_mur205_footprint_contour.plot_edges()
+    # mur205_footprint_contour.plot_edges()
+    # max_mur205_footprint_contour.plot_edges()
 
     # Calculate fitness value of the footprint area
     g_footprint: float = current_footprint_area / max_footprint_area
@@ -305,7 +304,7 @@ def calc_fitness_mur205_positions(mur205_pose_opti_info: MuR205PoseOptimizationI
     target_rotation: float = math.radians(90)
 
     # Init value with target value so it can only be worse. (max is searched)
-    largest_rotation_diff: float = target_rotation
+    largest_rotation_diff: float = 0
     for mur205 in mur205_pose_opti_info.mur205_contour_list:
         mur205_rotation: float = mur205.world_to_geometry_rotation
         rotation_diff: float = abs(abs(target_rotation)-abs(mur205_rotation))
@@ -320,21 +319,17 @@ def calc_fitness_mur205_positions(mur205_pose_opti_info: MuR205PoseOptimizationI
     g_rotation = largest_rotation_diff / max_rotation_diff
 
     g_mur205: float = 1.0 * g_footprint + 1.0 * g_distance + 1.0 * g_rotation
+    print("footprint: " + str(g_footprint) + " | distance: " + str(g_distance) + " | rotation: " + str(g_rotation))
     return g_mur205
     # New fitness calculation end
 
 
-
-
-
 def calc_fitness_sum_mur205_population(mur205_pose_optimization_population: List[MuR205PoseOptimizationInfo],
-                                       ur5_base_link_boundary_list: List[GeometryContour],
                                        grip_contour: GeometryContour,
                                        object_to_move: MovableObject) -> float:
     fitness_sum: float = 0.0
     for mur205_pose_opti_info in mur205_pose_optimization_population:
         fitness: float = calc_fitness_mur205_positions(mur205_pose_opti_info,
-                                                       ur5_base_link_boundary_list,
                                                        grip_contour,
                                                        object_to_move)
         fitness_sum += fitness
@@ -443,9 +438,9 @@ def mutate_geometry_contour_with_dead_zones(mur205_opti_info: MuR205PoseOptimiza
 
     index_of_mutated_corner: int = random.randrange(0, len(mur205_opti_info.mur205_contour_list))
 
-    corner_was_replaced: bool = False
-
-    while not corner_was_replaced:
+    mur205_mutation_successful: bool = False
+    mutation_timeout_counter: int = 0
+    while not mur205_mutation_successful:
         corner_to_mutate_world_cs: np.array = \
             mur205_opti_info.ur5_base_link_pose_contour.corner_point_list_world_cs[index_of_mutated_corner].copy()
 
@@ -471,27 +466,30 @@ def mutate_geometry_contour_with_dead_zones(mur205_opti_info: MuR205PoseOptimiza
                 corner_in_deadzone = True
                 break
 
-        if outside_border_list[index_of_mutated_corner].is_world_cs_point_in_contour(corner_to_mutate_world_cs) and \
-                not corner_in_deadzone:
-            mur205_opti_info.ur5_base_link_pose_contour.replace_contour_corner_world_cs(index_of_mutated_corner,
-                                                                                        corner_to_mutate_world_cs)
-            corner_was_replaced = True
+        if (not outside_border_list[index_of_mutated_corner].is_world_cs_point_in_contour(corner_to_mutate_world_cs) or
+                corner_in_deadzone):
+            continue
 
-    mur205_was_rotated: bool = False
-    while not mur205_was_rotated:
-        mur205_to_rotate: MuR205 = deepcopy(mur205_opti_info.mur205_contour_list[index_of_mutated_corner])
+        mur205_copy: MuR205 = deepcopy(mur205_opti_info.mur205_contour_list[index_of_mutated_corner])
+        mur205_copy.move_mur205_by_ur5_base_link(corner_to_mutate_world_cs)
 
         is_additive_mutation_rotation: bool = bool(random.getrandbits(1))
         mutation_relative_rotation: float = random.uniform(min_mutation_rotation, max_mutation_rotation)
 
         if is_additive_mutation_rotation:
-            mur205_to_rotate.rotate_relative_around_ur5_base_cs(mutation_relative_rotation)
+            mur205_copy.rotate_relative_around_ur5_base_cs(mutation_relative_rotation)
         else:
-            mur205_to_rotate.rotate_relative_around_ur5_base_cs(-mutation_relative_rotation)
+            mur205_copy.rotate_relative_around_ur5_base_cs(-mutation_relative_rotation)
 
-        if not mur205_to_rotate.is_contour_colliding(object_to_move):
-            mur205_opti_info.mur205_contour_list[index_of_mutated_corner] = mur205_to_rotate
-            mur205_was_rotated = True
+        if not mur205_copy.is_contour_colliding(extended_object_contour):
+            mur205_opti_info.ur5_base_link_pose_contour.replace_contour_corner_world_cs(index_of_mutated_corner,
+                                                                                        corner_to_mutate_world_cs)
+            mur205_opti_info.mur205_contour_list[index_of_mutated_corner] = mur205_copy
+            mur205_mutation_successful = True
+
+        mutation_timeout_counter += 1
+        if mutation_timeout_counter >= 100:
+            break
 
     return mur205_opti_info
 
@@ -575,7 +573,7 @@ if __name__ == '__main__':
                                                                  NUMBER_OF_ROBOTS)
 
     # 100 is just a good middle value where the corners have time to get further apart and its still relativly quick
-    for cylce_counter in range(0, 30):
+    for cylce_counter in range(0, 70):
         # Create mating pool
         fitness_sum: float = calculate_fitness_sum_of_grip_population(grip_contour_population,
                                                                       centroid_object_to_move_world_cs)
@@ -644,13 +642,11 @@ if __name__ == '__main__':
             child_mutation_chance: float = random.random()
 
             if child_mutation_chance < MUTATION_CHANCE:  # Mutation
-                print("Before mutation")
                 mutate_geometry_contour(mur205_child_pose,
                                         MIN_STEP_SIZE,
                                         MAX_STEP_SIZE,
                                         grip_area,
                                         centroid_object_to_move_world_cs)
-                print("After mutation")
 
         # Survivor selection
         total_population: dict = dict()
@@ -703,49 +699,58 @@ if __name__ == '__main__':
             # Initialize the first member of the optimization info
             # Pick a random point in the ur5 base link boundary that is valid
             ur5_base_link_pose: np.array = np.array([0, 0])
-            point_valid: bool = False
-            while not point_valid:
+            position_valid: bool = False
+            while not position_valid:
                 x_pose = random.uniform(ur5_base_link_boundary.x_min_world_cs,
                                         ur5_base_link_boundary.x_max_world_cs)
                 y_pose = random.uniform(ur5_base_link_boundary.y_min_world_cs,
                                         ur5_base_link_boundary.y_max_world_cs)
                 ur5_base_link_pose = np.array([x_pose, y_pose])
-                if ur5_base_link_boundary.is_world_cs_point_in_contour(ur5_base_link_pose) and not \
+
+                # First precheck so if this is not the case the rest of the loop must not be executed. Saves time.
+                if not ur5_base_link_boundary.is_world_cs_point_in_contour(ur5_base_link_pose) or \
                         extended_object_contour.is_world_cs_point_in_contour(ur5_base_link_pose):
-                    mur205_pose_opti_info.ur5_base_link_pose_contour.add_contour_corner_world_cs(ur5_base_link_pose)
-                    point_valid = True
+                    continue
 
-            # Initialize the second member of the optimization info
-            # Pick a random orientation of the mir200 base that is valid
-            mur205_contour: MuR205 = MuR205()
-            mur205_contour.move_mur205_by_ur5_base_link(ur5_base_link_pose)
+                # Initialize the second member of the optimization info
+                # Pick a random orientation of the mir200 base that is valid
+                mur205_contour: MuR205 = MuR205()
+                mur205_contour.move_mur205_by_ur5_base_link(ur5_base_link_pose)
 
-            orientation_valid: bool = False
-            while not orientation_valid:
                 rand_orientation: float = random.uniform(0, (2 * pi))
                 mur205_contour.rotate_absolute_around_ur5_base_cs(rand_orientation)
 
-                if not mur205_contour.is_contour_colliding(object_to_move):
+                if not mur205_contour.is_contour_colliding(extended_object_contour):
+                    mur205_pose_opti_info.ur5_base_link_pose_contour.add_contour_corner_world_cs(ur5_base_link_pose)
                     mur205_pose_opti_info.mur205_contour_list.append(mur205_contour)
-                    orientation_valid = True
+                    position_valid = True
 
         mur205_optimization_population.append(mur205_pose_opti_info)
 
-    for counter in range(0, 40):
+    for counter in range(0, 70):
         # Create mating pool
-        ur5_base_fitness_sum: float = calc_fitness_sum_mur205_population(
-            mur205_optimization_population,
-            ur5_base_link_boundary_list,
-            best_grip_contour,
-            object_to_move)
+        mur205_fitness_sum: float = calc_fitness_sum_mur205_population(mur205_optimization_population,
+                                                                       best_grip_contour,
+                                                                       object_to_move)
+        inverse_fitness_sum: float = 0.0
+        for mur205 in mur205_optimization_population:
+            mur205.fitness = calc_fitness_mur205_positions(mur205,
+                                                           best_grip_contour,
+                                                           object_to_move)
+            inverse_mur205_fitness: float = 1 / (mur205.fitness / mur205_fitness_sum)
+            inverse_fitness_sum += inverse_mur205_fitness
 
         mating_pool: List[MuR205PoseOptimizationInfo] = list()
         for mur205_pose_opti_info in mur205_optimization_population:
-            contour_fitness: float = calc_fitness_mur205_positions(mur205_pose_opti_info,
-                                                                   ur5_base_link_boundary_list,
-                                                                   best_grip_contour,
-                                                                   object_to_move)
-            mating_pool_chance: float = contour_fitness / ur5_base_fitness_sum
+            # Old mating pool creation
+            # mur205_pose_opti_info.fitness = calc_fitness_mur205_positions(mur205_pose_opti_info,
+            #                                                               best_grip_contour,
+            #                                                               object_to_move)
+            # mating_pool_chance: float = mur205_pose_opti_info.fitness / mur205_fitness_sum
+            # mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
+
+            inverse_mur205_fitness: float = 1 / (mur205_pose_opti_info.fitness / mur205_fitness_sum)
+            mating_pool_chance: float = inverse_mur205_fitness / inverse_fitness_sum
             mating_pool_instances: int = int(round(mating_pool_chance * MAX_POPULATION, 0))
             for pool_instance_counter in range(0, mating_pool_instances):
                 mating_pool.append(mur205_pose_opti_info)
@@ -805,9 +810,9 @@ if __name__ == '__main__':
 
         # Mutation
         MUTATION_CHANCE: float = 0.6
-        MAX_STEP_SIZE: float = 0.005
+        MAX_STEP_SIZE: float = 0.015
         MIN_STEP_SIZE: float = 0.001
-        MAX_ROTATION: float = pi/4
+        MAX_ROTATION: float = pi/8
         MIN_ROTATION: float = pi/32
 
         deadzone_list: List[GeometryContour] = list()
@@ -827,25 +832,29 @@ if __name__ == '__main__':
                                                         deadzone_list=deadzone_list)
 
         # Survivor selection
-        for member in mur205_optimization_population:
-            member.fitness = calc_fitness_mur205_positions(member,
-                                                           ur5_base_link_boundary_list,
-                                                           best_grip_contour,
-                                                           object_to_move)
+        # for member in mur205_optimization_population:
+        #     member.fitness = calc_fitness_mur205_positions(member,
+        #                                                    best_grip_contour,
+        #                                                    object_to_move)
 
         for member in mur205_next_gen_population:
             member.fitness = calc_fitness_mur205_positions(member,
-                                                           ur5_base_link_boundary_list,
                                                            best_grip_contour,
                                                            object_to_move)
 
         mur205_optimization_population.extend(mur205_next_gen_population)
 
-        sorted_total_population: list = sorted(mur205_optimization_population,
-                                               key=lambda member: member.fitness,
-                                               reverse=True)
+        sorted_total_population: List[MuR205PoseOptimizationInfo] = sorted(mur205_optimization_population,
+                                                                           key=lambda member: member.fitness)
 
-        mur205_optimization_population = sorted_total_population[0:MAX_POPULATION]
+        mur205_optimization_population.clear()
+        sorted_population_counter: int = 0
+        while len(mur205_optimization_population) < MAX_POPULATION:
+            if sorted_total_population[sorted_population_counter].fitness != 0:
+                mur205_optimization_population.append(sorted_total_population[sorted_population_counter])
+            sorted_population_counter += 1
+
+        # mur205_optimization_population = sorted_total_population[0:MAX_POPULATION]
         # for population_counter in range(0, MAX_POPULATION):
         #     next_population.append(sorted_total_population[population_counter][0])
         print("MiR200 optimization: " + str(counter))
@@ -853,13 +862,11 @@ if __name__ == '__main__':
     for mur205_opti_info in mur205_optimization_population:
         # contour.plot_edges(color="orange")
         mur205_opti_info.fitness = calc_fitness_mur205_positions(mur205_opti_info,
-                                                                 ur5_base_link_boundary_list,
                                                                  best_grip_contour,
                                                                  object_to_move)
 
     sorted_total_population: list = sorted(mur205_optimization_population,
-                                           key=lambda member: member.fitness,
-                                           reverse=True)
+                                           key=lambda member: member.fitness)
 
     best_grip_contour: MuR205PoseOptimizationInfo = sorted_total_population[0]
     best_grip_contour.ur5_base_link_pose_contour.plot_edges(color="green")
@@ -880,3 +887,4 @@ if __name__ == '__main__':
     axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
     axis.axis("equal")
     plot.show()  # Let this be the last command so the plots wont be closed instantly
+    i = 0
