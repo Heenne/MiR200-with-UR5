@@ -30,7 +30,7 @@ def plot_contour_info(object_to_move, extended_object_contour, grip_area):
     object_to_move.print_info()
     # object_to_move.plot_corners(block=False)
     object_to_move.plot_edges(block=False, color="black")
-    # object_to_move.plot_centroid(block=False)
+    object_to_move.plot_centroid(block=False, color="red")
 
     # extended_object_contour.print_info()
     # extended_object_contour.plot_corners(block=False)
@@ -167,8 +167,8 @@ def calculate_fitness_of_grip_contour(grip_contour: GeometryContour,
 
     # print("Kante Gütewert: " + str(g_kante))
 
-    fitness = g_stabi + 2*g_kante
-    # print("Total fitness: " + str(fitness))
+    fitness = g_stabi + 1.5*g_kante
+    print("Total fitness: " + str(fitness) + " | Stability: " + str(g_stabi) + " | Edge distance: " + str(g_kante))
     # Right fitness calc end
 
     return fitness
@@ -319,7 +319,7 @@ def calc_fitness_mur205_positions(mur205_pose_opti_info: MuR205PoseOptimizationI
     g_rotation = largest_rotation_diff / max_rotation_diff
 
     g_mur205: float = 1.0 * g_footprint + 1.0 * g_distance + 1.0 * g_rotation
-    print("footprint: " + str(g_footprint) + " | distance: " + str(g_distance) + " | rotation: " + str(g_rotation))
+    print("Total fitness: " + str(g_mur205) + " | footprint: " + str(g_footprint) + " | distance: " + str(g_distance) + " | rotation: " + str(g_rotation))
     return g_mur205
     # New fitness calculation end
 
@@ -573,7 +573,7 @@ if __name__ == '__main__':
                                                                  NUMBER_OF_ROBOTS)
 
     # 100 is just a good middle value where the corners have time to get further apart and its still relativly quick
-    for cylce_counter in range(0, 70):
+    for cylce_counter in range(0, 170):
         # Create mating pool
         fitness_sum: float = calculate_fitness_sum_of_grip_population(grip_contour_population,
                                                                       centroid_object_to_move_world_cs)
@@ -679,6 +679,8 @@ if __name__ == '__main__':
     best_grip_contour: GeometryContour = sorted_total_population[0][0]
     best_grip_contour.plot_edges(color="grey")
     best_grip_contour.plot_corners(color="green", markersize=10)
+
+    print()
 
     # Plotting start
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
@@ -897,6 +899,24 @@ if __name__ == '__main__':
     # print(mir_contour.is_contour_colliding(object_to_move))
 
     plot_contour_info(object_to_move, extended_object_contour, grip_area)
+
+    print("Grip point fitness results:")
+    calculate_fitness_of_grip_contour(best_grip_contour, centroid_object_to_move_world_cs)
+
+    print("MiR200 position fitness results:")
+    calc_fitness_mur205_positions(best_mur205_individual, best_grip_contour, object_to_move)
+
+    print("MuR205 positions:")
+    for index, mur205 in enumerate(best_mur205_individual.mur205_contour_list):
+        print("MuR205 spawn position: " + str(mur205.lead_vector_world_cs))
+        print("MuR205 spawn rotation: " + str(mur205.world_to_geometry_rotation))
+        print("UR5 grip position in world coord system: " +
+              str(best_grip_contour.corner_point_list_world_cs[index]))
+        print("UR5 grip position in MuR205 base_link coord system: " +
+              str(mur205.transform_vector_world_to_geometry_cs(best_grip_contour.corner_point_list_world_cs[index])))
+
+    print("Object information:")
+    print(object_to_move.print_info())
 
     axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
     axis.axis("equal")
