@@ -5,6 +5,7 @@ UR5ControllerManager::UR5ControllerManager(ros::NodeHandle ur5_controller_manage
     this->loadParameter();
 
     this->ur5_controller_manager_nh_ = ur5_controller_manager_nh;
+
     for(int counter = 0; counter < this->number_of_robots_; counter++)
     {
         std::string complete_robot_name = this->general_robot_name_ + std::to_string(counter);
@@ -15,6 +16,38 @@ UR5ControllerManager::UR5ControllerManager(ros::NodeHandle ur5_controller_manage
         ur5_controller_info->connectExecuteTrajectoryAction(this->execute_trajectory_action_name_);
         this->ur5_controller_info_list_.push_back(ur5_controller_info);
     }
+
+    tf::Quaternion quaternion1;
+    geometry_msgs::Pose target_pose1;
+    quaternion1.setRPY(0, M_PI_2, 0);
+    quaternion1.normalize();
+    tf::quaternionTFToMsg(quaternion1, target_pose1.orientation);
+    target_pose1.position.x = 0.694;
+    target_pose1.position.y = -0.05;
+    target_pose1.position.z = 0.20;
+
+    tf::Quaternion quaternion2;
+    geometry_msgs::Pose target_pose2;
+    quaternion2.setRPY(0, M_PI_2, 0);
+    quaternion2.normalize();
+    tf::quaternionTFToMsg(quaternion2, target_pose2.orientation);
+    target_pose2.position.x = 0.368;
+    target_pose2.position.y = -0.586;
+    target_pose2.position.z = 0.20;
+
+    tf::Quaternion quaternion3;
+    geometry_msgs::Pose target_pose3;
+    quaternion3.setRPY(0, M_PI_2, 0);
+    quaternion3.normalize();
+    tf::quaternionTFToMsg(quaternion3, target_pose3.orientation);
+    target_pose3.position.x = 0.659;
+    target_pose3.position.y = -0.544;
+    target_pose3.position.z = 0.20;
+
+    this->grip_point_list_.push_back(target_pose1);
+    this->grip_point_list_.push_back(target_pose2);
+    this->grip_point_list_.push_back(target_pose3);
+
 }
 
 void UR5ControllerManager::execute(const ros::TimerEvent &timer_event_info)
@@ -29,21 +62,23 @@ void UR5ControllerManager::execute(const ros::TimerEvent &timer_event_info)
 
         case ExecuteStates::slaves_plan_trajectory:
         {
-            tf::Quaternion quaternion;
-            quaternion.setRPY(0, M_PI_2, 0);
-            quaternion.normalize();
-            geometry_msgs::Pose target_pose1;
-            tf::quaternionTFToMsg(quaternion, target_pose1.orientation);
-            target_pose1.position.x = 0.8;
-            target_pose1.position.y = 0.0;
-            target_pose1.position.z = 0.15;
+            // tf::Quaternion quaternion;
+            // quaternion.setRPY(0, M_PI_2, 0);
+            // quaternion.normalize();
+            // geometry_msgs::Pose target_pose1;
+            // tf::quaternionTFToMsg(quaternion, target_pose1.orientation);
+            // target_pose1.position.x = 0.8;
+            // target_pose1.position.y = 0.0;
+            // target_pose1.position.z = 0.15;
+            int counter = 0;
             for(auto ur5_controller_info: this->ur5_controller_info_list_)
             {
                 ROS_INFO_STREAM("This needs to happen twice.");
                 mir_ur5_msgs::PlanTrajectoryGoal trajectory_goal;
                 trajectory_goal.movement_type_id = static_cast<int8_t>(MovementTypeIds::PTP);
-                trajectory_goal.target_pose = target_pose1;
+                trajectory_goal.target_pose = this->grip_point_list_[counter];
                 ur5_controller_info->startPlanTrajectoryAction(trajectory_goal);
+                counter += 1;
             }
             ROS_INFO_STREAM("slaves_plan_trajectory -> wait_for_planned_trajectory");
             this->manager_state_ = ExecuteStates::wait_for_planned_trajectory;
@@ -74,6 +109,7 @@ void UR5ControllerManager::execute(const ros::TimerEvent &timer_event_info)
 
         case ExecuteStates::wait_for_executed_trajectory:
         {
+            
             ROS_INFO_STREAM("All executions finished.");
         }
 

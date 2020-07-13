@@ -274,6 +274,7 @@ void UR5Controller::planTrajectoryGoalCb()
     }
     else
     {
+        this->plan_trajectory_as_->setSucceeded();
         // this->plan_trajectory_as_->setAborted();
     }
 }
@@ -299,6 +300,7 @@ void UR5Controller::executeTrajectoryGoalCb()
     }
     else
     {
+        this->plan_trajectory_as_->setSucceeded();
         // this->plan_trajectory_as_->setAborted();
     }
 }

@@ -32,6 +32,8 @@ class UR5ControllerManager
 
         std::vector<std::shared_ptr<UR5ControllerInfo>> ur5_controller_info_list_;
 
+        std::vector<geometry_msgs::Pose> grip_point_list_;
+
         ExecuteStates manager_state_;
 
         std::string general_robot_name_;

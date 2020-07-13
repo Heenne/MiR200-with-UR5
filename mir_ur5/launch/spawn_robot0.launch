@@ -10,7 +10,7 @@
             <arg name="robot_name" value="$(arg robot0_name)"/>
             <arg name="robot_namespace" value="$(arg robot0_namespace)"/>
             <arg name="tf_prefix" value="$(arg robot0_tf)"/>
-            <arg name="init_pose" value="-x 4.3 -y 0 -Y 3.141"/>
+            <arg name="init_pose" value="-x 0.042 -y 1.652 -Y -2.01"/>
         </include>
     </group>
 </launch>
