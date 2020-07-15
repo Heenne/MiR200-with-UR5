@@ -318,7 +318,7 @@ def calc_fitness_mur205_positions(mur205_pose_opti_info: MuR205PoseOptimizationI
     # Calculate fitness value of the rotation diff
     g_rotation = largest_rotation_diff / max_rotation_diff
 
-    g_mur205: float = 1.0 * g_footprint + 1.0 * g_distance + 1.0 * g_rotation
+    g_mur205: float = 0.0 * g_footprint + 1.0 * g_distance + 1.0 * g_rotation
     print("Total fitness: " + str(g_mur205) + " | footprint: " + str(g_footprint) + " | distance: " + str(g_distance) + " | rotation: " + str(g_rotation))
     return g_mur205
     # New fitness calculation end
@@ -436,60 +436,60 @@ def mutate_geometry_contour_with_dead_zones(mur205_opti_info: MuR205PoseOptimiza
     if deadzone_list is None:
         deadzone_list = list()
 
-    index_of_mutated_corner: int = random.randrange(0, len(mur205_opti_info.mur205_contour_list))
+    for index in range(0, 1):
+        index_of_mutated_corner: int = random.randrange(0, len(mur205_opti_info.mur205_contour_list))
+        mur205_mutation_successful: bool = False
+        mutation_timeout_counter: int = 0
+        while not mur205_mutation_successful:
+            corner_to_mutate_world_cs: np.array = \
+                mur205_opti_info.ur5_base_link_pose_contour.corner_point_list_world_cs[index_of_mutated_corner].copy()
 
-    mur205_mutation_successful: bool = False
-    mutation_timeout_counter: int = 0
-    while not mur205_mutation_successful:
-        corner_to_mutate_world_cs: np.array = \
-            mur205_opti_info.ur5_base_link_pose_contour.corner_point_list_world_cs[index_of_mutated_corner].copy()
+            is_additive_mutation_x: bool = bool(random.getrandbits(1))
+            is_additive_mutation_y: bool = bool(random.getrandbits(1))
+            mutation_value_x: float = random.uniform(min_mutation_distance, max_mutation_distance)
+            mutation_value_y: float = random.uniform(min_mutation_distance, max_mutation_distance)
 
-        is_additive_mutation_x: bool = bool(random.getrandbits(1))
-        is_additive_mutation_y: bool = bool(random.getrandbits(1))
-        mutation_value_x: float = random.uniform(min_mutation_distance, max_mutation_distance)
-        mutation_value_y: float = random.uniform(min_mutation_distance, max_mutation_distance)
+            if is_additive_mutation_x:
+                corner_to_mutate_world_cs[0] += mutation_value_x
+            else:
+                corner_to_mutate_world_cs[0] -= mutation_value_x
 
-        if is_additive_mutation_x:
-            corner_to_mutate_world_cs[0] += mutation_value_x
-        else:
-            corner_to_mutate_world_cs[0] -= mutation_value_x
+            if is_additive_mutation_y:
+                corner_to_mutate_world_cs[1] += mutation_value_y
+            else:
+                corner_to_mutate_world_cs[1] -= mutation_value_y
 
-        if is_additive_mutation_y:
-            corner_to_mutate_world_cs[1] += mutation_value_y
-        else:
-            corner_to_mutate_world_cs[1] -= mutation_value_y
+            # Check if the mutated corner point is in one of the listed deadzones
+            corner_in_deadzone: bool = False
+            for deadzone in deadzone_list:
+                if deadzone.is_world_cs_point_in_contour(corner_to_mutate_world_cs):
+                    corner_in_deadzone = True
+                    break
 
-        # Check if the mutated corner point is in one of the listed deadzones
-        corner_in_deadzone: bool = False
-        for deadzone in deadzone_list:
-            if deadzone.is_world_cs_point_in_contour(corner_to_mutate_world_cs):
-                corner_in_deadzone = True
+            if (not outside_border_list[index_of_mutated_corner].is_world_cs_point_in_contour(corner_to_mutate_world_cs) or
+                    corner_in_deadzone):
+                continue
+
+            mur205_copy: MuR205 = deepcopy(mur205_opti_info.mur205_contour_list[index_of_mutated_corner])
+            mur205_copy.move_mur205_by_ur5_base_link(corner_to_mutate_world_cs)
+
+            is_additive_mutation_rotation: bool = bool(random.getrandbits(1))
+            mutation_relative_rotation: float = random.uniform(min_mutation_rotation, max_mutation_rotation)
+
+            if is_additive_mutation_rotation:
+                mur205_copy.rotate_relative_around_ur5_base_cs(mutation_relative_rotation)
+            else:
+                mur205_copy.rotate_relative_around_ur5_base_cs(-mutation_relative_rotation)
+
+            if not mur205_copy.is_contour_colliding(extended_object_contour):
+                mur205_opti_info.ur5_base_link_pose_contour.replace_contour_corner_world_cs(index_of_mutated_corner,
+                                                                                            corner_to_mutate_world_cs)
+                mur205_opti_info.mur205_contour_list[index_of_mutated_corner] = mur205_copy
+                mur205_mutation_successful = True
+
+            mutation_timeout_counter += 1
+            if mutation_timeout_counter >= 100:
                 break
-
-        if (not outside_border_list[index_of_mutated_corner].is_world_cs_point_in_contour(corner_to_mutate_world_cs) or
-                corner_in_deadzone):
-            continue
-
-        mur205_copy: MuR205 = deepcopy(mur205_opti_info.mur205_contour_list[index_of_mutated_corner])
-        mur205_copy.move_mur205_by_ur5_base_link(corner_to_mutate_world_cs)
-
-        is_additive_mutation_rotation: bool = bool(random.getrandbits(1))
-        mutation_relative_rotation: float = random.uniform(min_mutation_rotation, max_mutation_rotation)
-
-        if is_additive_mutation_rotation:
-            mur205_copy.rotate_relative_around_ur5_base_cs(mutation_relative_rotation)
-        else:
-            mur205_copy.rotate_relative_around_ur5_base_cs(-mutation_relative_rotation)
-
-        if not mur205_copy.is_contour_colliding(extended_object_contour):
-            mur205_opti_info.ur5_base_link_pose_contour.replace_contour_corner_world_cs(index_of_mutated_corner,
-                                                                                        corner_to_mutate_world_cs)
-            mur205_opti_info.mur205_contour_list[index_of_mutated_corner] = mur205_copy
-            mur205_mutation_successful = True
-
-        mutation_timeout_counter += 1
-        if mutation_timeout_counter >= 100:
-            break
 
     return mur205_opti_info
 
@@ -559,7 +559,7 @@ if __name__ == '__main__':
     centroid_object_to_move_world_cs: np.array = object_to_move.calc_centroid_world_cs()
     object_to_move.plot_centroid(color="red")
 
-    MAX_POPULATION: int = 20  # Dont specify odd amounts, allways even!
+    MAX_POPULATION: int = 30  # Dont specify odd amounts, allways even!
 
     # The values for MAX and MIN_STEP_SIZE are just randomly picked and tweeked so it worked good
     MAX_STEP_SIZE: float = round((grip_area.calc_longest_edge_length() / 5), 3)
@@ -573,7 +573,7 @@ if __name__ == '__main__':
                                                                  NUMBER_OF_ROBOTS)
 
     # 100 is just a good middle value where the corners have time to get further apart and its still relativly quick
-    for cylce_counter in range(0, 170):
+    for cylce_counter in range(0, 50):
         # Create mating pool
         fitness_sum: float = calculate_fitness_sum_of_grip_population(grip_contour_population,
                                                                       centroid_object_to_move_world_cs)
@@ -677,16 +677,27 @@ if __name__ == '__main__':
     sorted_total_population: list = sorted(total_population.items(), key=lambda member: member[1])
 
     best_grip_contour: GeometryContour = sorted_total_population[0][0]
+
+    # best_grip_contour: GeometryContour = GeometryContour(
+    #     lead_vector_world_cs=object_to_move.lead_vector_world_cs,
+    #     world_to_geometry_cs_rotation=object_to_move.world_to_geometry_rotation)
+    # best_grip_contour.add_contour_corner_world_cs(np.array([-0.29815476, 1.04508804]))
+    # best_grip_contour.add_contour_corner_world_cs(np.array([-1.53133929, -0.19831744]))
+    # best_grip_contour.add_contour_corner_world_cs(np.array([1.79076799, -0.85456966]))
+
+    # best_grip_contour.add_contour_corner_world_cs(np.array([-1.96002051, 1.35153679]))
+    # best_grip_contour.add_contour_corner_world_cs(np.array([-1.4378, -1.36879297]))
+    # best_grip_contour.add_contour_corner_world_cs(np.array([1.75432315, -1.31019628]))
+    # best_grip_contour.add_contour_corner_world_cs(np.array([1.57610066,  1.34036934]))
+    # best_grip_contour.create_contour_edges()
     best_grip_contour.plot_edges(color="grey")
     best_grip_contour.plot_corners(color="green", markersize=10)
 
-    print()
-
     # Plotting start
-    plot_contour_info(object_to_move, extended_object_contour, grip_area)
-    axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
-    axis.axis("equal")
-    object_to_move.plot_centroid(color="red", block=True)
+    # plot_contour_info(object_to_move, extended_object_contour, grip_area)
+    # axis: plot.Axes = plot.gca()  # Get current axis object and set x and y to be equal so a square is a square
+    # axis.axis("equal")
+    # object_to_move.plot_centroid(color="red", block=True)
     # Plotting end
 
     ur5_base_link_boundary_list: List[GeometryContour] = list()
@@ -736,7 +747,7 @@ if __name__ == '__main__':
 
         mur205_optimization_population.append(mur205_pose_opti_info)
 
-    for counter in range(0, 70):
+    for counter in range(0, 50):
         # Create mating pool
         mur205_fitness_sum: float = calc_fitness_sum_mur205_population(mur205_optimization_population,
                                                                        best_grip_contour,
@@ -819,10 +830,10 @@ if __name__ == '__main__':
 
         # Mutation
         MUTATION_CHANCE: float = 0.6
-        MAX_STEP_SIZE: float = 0.015
-        MIN_STEP_SIZE: float = 0.001
-        MAX_ROTATION: float = pi/8
-        MIN_ROTATION: float = pi/32
+        MAX_STEP_SIZE: float = 0.1
+        MIN_STEP_SIZE: float = 0.01
+        MAX_ROTATION: float = pi
+        MIN_ROTATION: float = pi/128
 
         deadzone_list: List[GeometryContour] = list()
         deadzone_list.append(extended_object_contour)
